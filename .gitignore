@@ -1,0 +1,38 @@
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# ===== Virtual environment =====
+venv/
+.env/
+.env.*
+.venv/
+
+# ===== FastAPI / Uvicorn =====
+*.log
+
+# ===== PyCharm =====
+.idea/
+
+# ===== Tests =====
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ===== Mypy / Ruff =====
+.mypy_cache/
+.ruff_cache/
+
+# ===== OS (Linux) =====
+.DS_Store
+Thumbs.db
+
+# ===== Build =====
+build/
+dist/
+*.egg-info/
+
+# ===== dotenv secrets =====
+.env
