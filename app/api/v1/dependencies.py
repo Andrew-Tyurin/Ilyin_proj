@@ -18,23 +18,25 @@ Security = HTTPBearer(description=f"Need JWT for authorization.")
 Token: TypeAlias = str
 
 
-async def get_access_token(credentials: HTTPAuthorizationCredentials = Depends(Security)) -> Token:
-    return credentials.credentials
-
-
-async def get_payload(token: Annotated[str, Depends(get_access_token)]) -> dict:
-    return InstanceJWTokenService.decode_token(token)
-
-
-AccessToken = Annotated[str, Depends(get_access_token)]
-PayloadAccessToken = Annotated[dict, Depends(get_payload)]
-
-
 def get_service_token():
     return InstanceJWTokenService
 
 
 TokenServiceDep = Annotated[JWTokenService, Depends(get_service_token)]
+
+
+def get_access_token(credentials: HTTPAuthorizationCredentials = Depends(Security)) -> Token:
+    return credentials.credentials
+
+
+AccessToken = Annotated[str, Depends(get_access_token)]
+
+
+def get_payload(token: AccessToken, service_token: TokenServiceDep) -> dict:
+    return service_token.decode_token(token)
+
+
+PayloadAccessToken = Annotated[dict, Depends(get_payload)]
 
 
 async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
