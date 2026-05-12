@@ -3,9 +3,9 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
+from app.contracts.repository_users import AbstractRepositoryUser
 from app.infrastructure.hashing import HashArgon2
 from app.infrastructure.sqlalchemy_models import UserORM
-from app.contracts.repository_users import AbstractRepositoryUser
 
 
 class SqlAlchemyRepositoryUser(AbstractRepositoryUser):
