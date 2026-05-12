@@ -4,7 +4,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from app.contracts.repository_wallets import AbstractRepositoryWallet
-from app.infrastructure.sqlalchemy_models import WalletORM, UserORM
+from app.infrastructure.sqlalchemy_models import WalletORM
 
 
 class SqlAlchemyRepositoryWallet(AbstractRepositoryWallet):
@@ -32,7 +32,7 @@ class SqlAlchemyRepositoryWallet(AbstractRepositoryWallet):
 
     async def get_all(self, user_id: int):
         wallets_stm = (
-            select(WalletORM.name, WalletORM.balance)
+            select(WalletORM.id, WalletORM.name, WalletORM.balance)
             .where(WalletORM.user_id == user_id)
             .order_by(WalletORM.id)
         )

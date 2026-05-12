@@ -10,7 +10,7 @@ class UserORM(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_name: Mapped[str] = mapped_column(String(80), nullable=False, unique=True, index=True)
     password: Mapped[str] = mapped_column(String(120), nullable=False)
-    wallets: Mapped["WalletORM"] = relationship(back_populates="user", passive_deletes=True)
+    wallets: Mapped[list["WalletORM"]] = relationship(back_populates="user", passive_deletes=True)
 
 
 class WalletORM(Base):

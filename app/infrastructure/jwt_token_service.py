@@ -6,11 +6,11 @@ from fastapi import HTTPException
 from jwt.exceptions import InvalidTokenError
 
 from app.contracts.token_service import AbstractTokenService
-from config_env import settings_secret_key
+from app.config_env import secret_key_env
 
 
 class JWTokenService(AbstractTokenService):
-    _secret_key: str = settings_secret_key.SECRET_KEY
+    _secret_key: str = secret_key_env.SECRET_KEY
     _access_token_expire_minutes: int = 15
     _algorithm: str = "HS256"
 
