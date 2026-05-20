@@ -13,7 +13,7 @@ async def get_users(service: UserServiceDep, offset: Annotated[int | None, Query
     return await service.get_users(offset)
 
 
-@router.post("")
+@router.post("", status_code=201)
 async def create_user(service: UserServiceDep, user: BaseUserSchema) -> ReadUserAndTokenSchema:
     return await service.create_user(user.model_dump())
 

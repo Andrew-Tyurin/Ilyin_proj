@@ -24,10 +24,10 @@ async def get_wallets(
     user_id = payload.get("sub")
     user_name = payload.get("user_name")
     wallets_user = await service.get_wallets(user_id)
-    return {"user_name": user_name, "wallets": wallets_user}
+    return {"user_id": user_id, "user_name": user_name, "wallets": wallets_user}
 
 
-@router.post("")
+@router.post("", status_code=201)
 async def create_wallet(
         service: WalletServiceDep,
         payload: PayloadAccessToken,

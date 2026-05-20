@@ -53,7 +53,7 @@ class SqlAlchemyRepositoryOperation(AbstractRepositoryOperation):
         except IntegrityError as e:
             raise HTTPException(
                 status_code=400,
-                detail=f"Problem updating object '{wallet_name=}'\n{e.args[0]}"
+                detail=f"Problem updating object {wallet_name=}\n{e.args[0]}"
             )
         else:
             await self._session.commit()

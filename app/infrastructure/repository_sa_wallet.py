@@ -19,16 +19,16 @@ class SqlAlchemyRepositoryWallet(AbstractRepositoryWallet):
             )
             return {"total_balance": 0 if result is None else result}
 
-        stm = await self._session.scalars(
-            select(WalletORM)
+        stm = await self._session.execute(
+            select(WalletORM.id, WalletORM.name, WalletORM.balance)
             .where(and_(WalletORM.name == wallet_name, WalletORM.user_id == user_id))
         )
-        result = stm.one_or_none()
+        wallet = stm.one_or_none()
 
-        if result is None:
+        if wallet is None:
             raise HTTPException(status_code=404, detail=f"Wallet '{wallet_name}' does not exist")
 
-        return result.model_dump()
+        return dict(wallet._mapping)
 
     async def get_all(self, user_id: int):
         wallets_stm = (
