@@ -1,10 +1,12 @@
 from pydantic import BaseModel, Field, field_validator
 
+from app.custom_enum import CurrencyEnum
+
 
 class OperationSchema(BaseModel):
     wallet_name: str = Field(..., min_length=1, max_length=80)
     amount: int = Field(ge=1)
-    description: str | None = Field(None, min_length=1, max_length=120)
+    description: str | None = Field(None, min_length=1, max_length=80)
 
     @field_validator("wallet_name", "description")
     @classmethod
@@ -17,7 +19,7 @@ class OperationSchema(BaseModel):
 
 class CreateWalletSchema(BaseModel):
     name: str = Field(..., min_length=1, max_length=80)
-    initial_balance: int = Field(ge=0, default=0)
+    currency: CurrencyEnum = CurrencyEnum.RUB
 
     @field_validator("name")
     @classmethod
@@ -62,3 +64,20 @@ class ReadPayloadTokenSchema(BaseModel):
     id: int
     user_name: str
     expires_time_life: int
+
+
+class ReadWalletSchema(BaseModel):
+    id: int
+    name: str
+    balance: int
+    currency: CurrencyEnum
+
+
+class ReadWalletsAllSchema(BaseModel):
+    user_id: int
+    user_name: str
+    wallets: list[ReadWalletSchema]
+
+
+class ReadWalletsTotalBalanceSchema(BaseModel):
+    total_balance: int

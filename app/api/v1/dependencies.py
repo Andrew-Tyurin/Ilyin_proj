@@ -5,7 +5,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from app.infrastructure.jwt_token_service import JWTokenService
-from app.infrastructure.repository_sa_operation import SqlAlchemyRepositoryOperation
+from app.infrastructure.repository_sa_operation import SqlAlchemyRepositoryOperation, SqlAlchemyRepositoryOperationHistory
 from app.infrastructure.repository_sa_users import SqlAlchemyRepositoryUser
 from app.infrastructure.repository_sa_wallet import SqlAlchemyRepositoryWallet
 from app.infrastructure.sqlalchemy_db import AsyncSessionLocal
@@ -64,8 +64,9 @@ WalletServiceDep = Annotated[ServiceWallet, Depends(get_service_wallet)]
 
 
 def get_service_operation(session: AsyncSessionDep):
-    repo = SqlAlchemyRepositoryOperation(session)
-    return ServiceOperation(repo)
+    repo_operation = SqlAlchemyRepositoryOperation(session)
+    repo_history = SqlAlchemyRepositoryOperationHistory(session)
+    return ServiceOperation(repo_operation, repo_history)
 
 
 OperationServiceDep = Annotated[ServiceOperation, Depends(get_service_operation)]

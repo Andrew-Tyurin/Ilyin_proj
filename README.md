@@ -25,4 +25,6 @@
 
 #### 5) APP_ENV как указаны в примерах. Создаем и активируем окружение, ставим зависимости.
 
-#### 6) запускаем из корня проекта, bash: `python main.py` или `uvicorn app.main:app --reload`, а для тестов: pytest -vs
+#### 6) Создаём таблицы из корня проекта: python -m app.db_table_management
+
+#### 7) запускаем из корня проекта, bash: `python main.py` или `uvicorn app.main:app --reload`, а для тестов: pytest -vs

@@ -1,7 +1,12 @@
 from fastapi import APIRouter
 
 from app.api.v1.dependencies import WalletServiceDep, PayloadAccessToken
-from app.api.v1.schemas import CreateWalletSchema
+from app.api.v1.schemas import (
+    CreateWalletSchema,
+    ReadWalletsAllSchema,
+    ReadWalletSchema,
+    ReadWalletsTotalBalanceSchema
+)
 
 router = APIRouter()
 
@@ -11,7 +16,7 @@ async def get_balance(
         service: WalletServiceDep,
         payload: PayloadAccessToken,
         wallet_name: str | None = None
-):
+) -> ReadWalletSchema | ReadWalletsTotalBalanceSchema:
     user_id = payload.get("sub")
     return await service.get_balance(user_id, wallet_name)
 
@@ -20,7 +25,7 @@ async def get_balance(
 async def get_wallets(
         service: WalletServiceDep,
         payload: PayloadAccessToken,
-):
+) -> ReadWalletsAllSchema:
     user_id = payload.get("sub")
     user_name = payload.get("user_name")
     wallets_user = await service.get_wallets(user_id)

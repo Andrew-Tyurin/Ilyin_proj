@@ -20,7 +20,7 @@ class SqlAlchemyRepositoryWallet(AbstractRepositoryWallet):
             return {"total_balance": 0 if result is None else result}
 
         stm = await self._session.execute(
-            select(WalletORM.id, WalletORM.name, WalletORM.balance)
+            select(WalletORM.id, WalletORM.name, WalletORM.balance, WalletORM.currency)
             .where(and_(WalletORM.name == wallet_name, WalletORM.user_id == user_id))
         )
         wallet = stm.one_or_none()
@@ -32,7 +32,7 @@ class SqlAlchemyRepositoryWallet(AbstractRepositoryWallet):
 
     async def get_all(self, user_id: int):
         wallets_stm = (
-            select(WalletORM.id, WalletORM.name, WalletORM.balance)
+            select(WalletORM.id, WalletORM.name, WalletORM.balance, WalletORM.currency)
             .where(WalletORM.user_id == user_id)
             .order_by(WalletORM.id)
         )
@@ -42,7 +42,6 @@ class SqlAlchemyRepositoryWallet(AbstractRepositoryWallet):
 
     async def add(self, user_id: int, wallet: dict):
         name = wallet.get("name")
-        wallet["balance"] = wallet.pop("initial_balance")
 
         stm = select(WalletORM.id).where(and_(WalletORM.name == name, WalletORM.user_id == user_id)).exists()
         result_bool = await self._session.scalar(select(stm))
