@@ -1,9 +1,13 @@
+from decimal import Decimal
+from typing import Callable
+
 from fastapi import HTTPException
-from sqlalchemy import select, func, and_
+from sqlalchemy import select, and_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from app.contracts.repository_wallets import AbstractRepositoryWallet
+from app.custom_enum import CurrencyEnum
 from app.infrastructure.sqlalchemy_models import WalletORM
 
 
@@ -11,13 +15,20 @@ class SqlAlchemyRepositoryWallet(AbstractRepositoryWallet):
     def __init__(self, session: AsyncSession):
         self._session = session
 
-    async def get(self, user_id: int, wallet_name: str | None = None):
+    async def get(self, user_id: int, wallet_name: str | None = None, **kwargs):
         if wallet_name is None:
-            result: int = await self._session.scalar(
-                select(func.sum(WalletORM.balance))
+            currency_const: CurrencyEnum = kwargs.get("currency", CurrencyEnum.RUB)
+            exchange_func: Callable[[str, str], Decimal] = kwargs.get("exchange_func")
+
+            result = (await self._session.execute(
+                select(WalletORM.currency, WalletORM.balance)
                 .where(WalletORM.user_id == user_id)
+            )).all()
+
+            total_balance: Decimal = sum(
+                (round(exchange_func(row.currency, currency_const) * row.balance, 2) for row in result)
             )
-            return {"total_balance": 0 if result is None else result}
+            return {"currency": currency_const, "total_balance": total_balance}
 
         stm = await self._session.execute(
             select(WalletORM.id, WalletORM.name, WalletORM.balance, WalletORM.currency)

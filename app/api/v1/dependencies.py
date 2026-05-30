@@ -9,6 +9,7 @@ from app.infrastructure.repository_sa_operation import SqlAlchemyRepositoryOpera
 from app.infrastructure.repository_sa_users import SqlAlchemyRepositoryUser
 from app.infrastructure.repository_sa_wallet import SqlAlchemyRepositoryWallet
 from app.infrastructure.sqlalchemy_db import AsyncSessionLocal
+from app.services.exchange_rate import get_exchange_rate
 from app.services.operations import ServiceOperation
 from app.services.users import ServiceUser
 from app.services.wallets import ServiceWallet
@@ -57,7 +58,7 @@ UserServiceDep = Annotated[ServiceUser, Depends(get_service_user)]
 
 def get_service_wallet(session: AsyncSessionDep):
     repo = SqlAlchemyRepositoryWallet(session)
-    return ServiceWallet(repo)
+    return ServiceWallet(repo, get_exchange_rate)
 
 
 WalletServiceDep = Annotated[ServiceWallet, Depends(get_service_wallet)]
@@ -65,8 +66,8 @@ WalletServiceDep = Annotated[ServiceWallet, Depends(get_service_wallet)]
 
 def get_service_operation(session: AsyncSessionDep):
     repo_operation = SqlAlchemyRepositoryOperation(session)
-    repo_history = SqlAlchemyRepositoryOperationHistory(session)
-    return ServiceOperation(repo_operation, repo_history)
+    repo_operation_history = SqlAlchemyRepositoryOperationHistory(session)
+    return ServiceOperation(repo_operation, repo_operation_history, get_exchange_rate)
 
 
 OperationServiceDep = Annotated[ServiceOperation, Depends(get_service_operation)]

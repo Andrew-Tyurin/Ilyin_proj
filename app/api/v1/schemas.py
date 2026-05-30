@@ -1,33 +1,13 @@
+from datetime import datetime
+from decimal import Decimal
+from typing import Annotated
+
 from pydantic import BaseModel, Field, field_validator
 
 from app.custom_enum import CurrencyEnum
 
-
-class OperationSchema(BaseModel):
-    wallet_name: str = Field(..., min_length=1, max_length=80)
-    amount: int = Field(ge=1)
-    description: str | None = Field(None, min_length=1, max_length=80)
-
-    @field_validator("wallet_name", "description")
-    @classmethod
-    def fields_not_empty(cls, value, info) -> str:
-        value = value.strip()
-        if not value:
-            raise ValueError(f"Wallet '{info.field_name}' cannot be empty")
-        return value
-
-
-class CreateWalletSchema(BaseModel):
-    name: str = Field(..., min_length=1, max_length=80)
-    currency: CurrencyEnum = CurrencyEnum.RUB
-
-    @field_validator("name")
-    @classmethod
-    def name_not_empty(cls, value, info) -> str:
-        value = value.strip()
-        if not value:
-            raise ValueError(f"Wallet '{info.field_name}' cannot be empty")
-        return value
+CreateFieldDecimal = Annotated[Decimal, Field(ge=Decimal("0.01"), default=Decimal("0.01"))]
+ReadFieldDecimal = Annotated[Decimal, Field(default=Decimal("0.00"))]
 
 
 class BaseUserSchema(BaseModel):
@@ -51,6 +31,57 @@ class BaseUserSchema(BaseModel):
         return value
 
 
+class CreateWalletSchema(BaseModel):
+    name: str = Field(..., min_length=1, max_length=80)
+    currency: CurrencyEnum = CurrencyEnum.RUB
+
+    @field_validator("name")
+    @classmethod
+    def name_not_empty(cls, value, info) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError(f"Wallet '{info.field_name}' cannot be empty")
+        return value
+
+
+class CreateOperationSchema(BaseModel):
+    wallet_id: int = Field(ge=1)
+    amount: CreateFieldDecimal
+    description: str | None = Field(None, min_length=1, max_length=80)
+
+    @field_validator("description")
+    @classmethod
+    def fields_not_empty(cls, value, info) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError(f"Wallet '{info.field_name}' cannot be empty")
+        return value
+
+    @field_validator("amount")
+    @classmethod
+    def round_number(cls, value: Decimal, info) -> Decimal:
+        return round(value, 2)
+
+
+class CreateTransferWalletsShema(BaseModel):
+    from_wallet_id: int = Field(ge=1)
+    to_wallet_id: int = Field(ge=1)
+    amount: CreateFieldDecimal
+
+    @field_validator("to_wallet_id")
+    @classmethod
+    def wallets_must_differ(cls, to_wallet_id, info) -> int:
+        from_wallet_id = info.data.get("from_wallet_id")
+        if from_wallet_id == to_wallet_id:
+            raise ValueError(f"same wallets ids; ({from_wallet_id=}) == ({to_wallet_id=}) - unacceptable")
+        return to_wallet_id
+
+    @field_validator("amount")
+    @classmethod
+    def round_number(cls, value: Decimal, info) -> Decimal:
+        return round(value, 2)
+
+
 class ReadUserSchema(BaseModel):
     id: int | None
     user_name: str
@@ -69,7 +100,7 @@ class ReadPayloadTokenSchema(BaseModel):
 class ReadWalletSchema(BaseModel):
     id: int
     name: str
-    balance: int
+    balance: ReadFieldDecimal
     currency: CurrencyEnum
 
 
@@ -80,4 +111,25 @@ class ReadWalletsAllSchema(BaseModel):
 
 
 class ReadWalletsTotalBalanceSchema(BaseModel):
-    total_balance: int
+    currency: CurrencyEnum
+    total_balance: ReadFieldDecimal
+
+
+class ReadOperationSchema(BaseModel):
+    id: int
+    type: str
+    amount: ReadFieldDecimal
+    description: str
+    created_at: datetime
+
+
+class ReadOperationsHistoryShema(BaseModel):
+    wallet_id: int
+    wallet_name: str
+    currency: str
+    operation: ReadOperationSchema
+
+
+class ReadTransferBetweenWalletsShema(BaseModel):
+    from_wallet: ReadOperationsHistoryShema
+    to_wallet: ReadOperationsHistoryShema

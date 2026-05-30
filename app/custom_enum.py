@@ -7,9 +7,11 @@ class CurrencyEnum(StrEnum):
     EUR = "eur"
 
 
-class OperationEnum(StrEnum):
+class OperationTypeEnum(StrEnum):
     INCOME = "income"
     EXPENSE = "expense"
+    TRANSFER_INCOME = "transfer_income"
+    TRANSFER_EXPENSE = "transfer_expense"
 
 
 class OperationOrderEnum(StrEnum):

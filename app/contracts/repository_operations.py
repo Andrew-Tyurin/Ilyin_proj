@@ -10,10 +10,18 @@ class AbstractRepositoryOperation(ABC):
     async def subtraction(self, user_id: int, operation: dict):
         pass
 
+    @abstractmethod
+    async def transfer(self, user_id: int, transfer_wallets: dict):
+        pass
+
 
 class AbstractRepositoryOperationHistory(ABC):
     @abstractmethod
     async def add_history(self, updated_wallet: dict, income: bool, expense: bool):
+        pass
+
+    @abstractmethod
+    async def add_transfer_history_between(self, from_wallet: dict, to_wallet: dict):
         pass
 
     @abstractmethod

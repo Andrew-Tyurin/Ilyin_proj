@@ -1,9 +1,19 @@
 from datetime import datetime
+from decimal import Decimal
 
-from sqlalchemy import String, Integer, CheckConstraint, ForeignKey, BigInteger, DateTime, func, Enum as SQLEnum
+from sqlalchemy import (
+    String,
+    CheckConstraint,
+    ForeignKey,
+    BigInteger,
+    DateTime,
+    func,
+    DECIMAL,
+    Enum as SQLEnum
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.custom_enum import CurrencyEnum, OperationEnum
+from app.custom_enum import CurrencyEnum, OperationTypeEnum
 from app.infrastructure.sqlalchemy_db import Base
 
 
@@ -21,7 +31,7 @@ class WalletORM(Base):
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     name: Mapped[str] = mapped_column(String(80), nullable=False)
-    balance: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    balance: Mapped[Decimal] = mapped_column(DECIMAL(14, 2), nullable=False, default=Decimal("0.00"))
     user_id: Mapped[int] = mapped_column(
         ForeignKey("user.id", ondelete="CASCADE"),
         nullable=False,
@@ -34,7 +44,7 @@ class WalletORM(Base):
     operations: Mapped["OperationWalletORM"] = relationship(back_populates="wallet", passive_deletes=True)
 
     __table_args__ = (
-        CheckConstraint(f"balance >= 0", name="wallet_balance"),
+        CheckConstraint(f"balance >= 0.00", name="wallet_balance"),
     )
 
 
@@ -43,11 +53,11 @@ class OperationWalletORM(Base):
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     wallet_id: Mapped[int] = mapped_column(ForeignKey("wallet.id", ondelete="CASCADE"))
-    type: Mapped[OperationEnum] = mapped_column(
-        SQLEnum(OperationEnum, values_callable=lambda enum: [e.value for e in enum]),
+    type: Mapped[OperationTypeEnum] = mapped_column(
+        SQLEnum(OperationTypeEnum, values_callable=lambda enum: [e.value for e in enum]),
         nullable=False
     )
-    amount: Mapped[int] = mapped_column(Integer, nullable=False)
+    amount: Mapped[Decimal] = mapped_column(DECIMAL(14, 2), nullable=False)
     description: Mapped[str | None] = mapped_column(String(80), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -55,3 +65,7 @@ class OperationWalletORM(Base):
         nullable=False,
     )
     wallet: Mapped[WalletORM] = relationship(back_populates="operations")
+
+    __table_args__ = (
+        CheckConstraint(f"amount >= 0.00", name="operation_amount"),
+    )

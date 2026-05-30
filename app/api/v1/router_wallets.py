@@ -7,6 +7,7 @@ from app.api.v1.schemas import (
     ReadWalletSchema,
     ReadWalletsTotalBalanceSchema
 )
+from app.custom_enum import CurrencyEnum
 
 router = APIRouter()
 
@@ -15,10 +16,11 @@ router = APIRouter()
 async def get_balance(
         service: WalletServiceDep,
         payload: PayloadAccessToken,
-        wallet_name: str | None = None
+        wallet_name: str | None = None,
+        show_total_balance_in_currency: CurrencyEnum | None = None
 ) -> ReadWalletSchema | ReadWalletsTotalBalanceSchema:
     user_id = payload.get("sub")
-    return await service.get_balance(user_id, wallet_name)
+    return await service.get_balance(user_id, wallet_name, show_total_balance_in_currency)
 
 
 @router.get("/all")
