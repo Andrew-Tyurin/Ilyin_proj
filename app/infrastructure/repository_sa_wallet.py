@@ -1,5 +1,6 @@
+import asyncio
 from decimal import Decimal
-from typing import Callable
+from typing import Callable, Awaitable
 
 from fastapi import HTTPException
 from sqlalchemy import select, and_
@@ -15,21 +16,20 @@ class SqlAlchemyRepositoryWallet(AbstractRepositoryWallet):
     def __init__(self, session: AsyncSession):
         self._session = session
 
-    async def get(self, user_id: int, wallet_name: str | None = None, **kwargs):
-        if wallet_name is None:
-            currency_const: CurrencyEnum = kwargs.get("currency", CurrencyEnum.RUB)
-            exchange_func: Callable[[str, str], Decimal] = kwargs.get("exchange_func")
+    async def get_balance(self, user_id: int, **kwargs):
+        currency_const: CurrencyEnum = kwargs.get("currency", CurrencyEnum.RUB)
+        exchange_func: Callable[[str, str], Awaitable[Decimal]] = kwargs.get("exchange_func")
 
-            result = (await self._session.execute(
-                select(WalletORM.currency, WalletORM.balance)
-                .where(WalletORM.user_id == user_id)
-            )).all()
+        result = (await self._session.execute(
+            select(WalletORM.currency, WalletORM.balance)
+            .where(WalletORM.user_id == user_id)
+        )).all()
 
-            total_balance: Decimal = sum(
-                (round(exchange_func(row.currency, currency_const) * row.balance, 2) for row in result)
-            )
-            return {"currency": currency_const, "total_balance": total_balance}
+        rates = await asyncio.gather(*[exchange_func(row.currency, currency_const) for row in result])
+        total_balance = sum((round(rate * row.balance, 2) for rate, row in zip(rates, result)))
+        return {"currency": currency_const, "total_balance": total_balance}
 
+    async def get(self, user_id: int,  wallet_name: str):
         stm = await self._session.execute(
             select(WalletORM.id, WalletORM.name, WalletORM.balance, WalletORM.currency)
             .where(and_(WalletORM.name == wallet_name, WalletORM.user_id == user_id))

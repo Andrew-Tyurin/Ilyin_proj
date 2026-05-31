@@ -3,7 +3,11 @@ from abc import ABC, abstractmethod
 
 class AbstractRepositoryWallet(ABC):
     @abstractmethod
-    async def get(self, user_id: int, wallet_name: str | None = None):
+    async def get_balance(self, user_id: int, **kwargs):
+        pass
+
+    @abstractmethod
+    async def get(self, user_id: int, wallet_name: str):
         pass
 
     @abstractmethod

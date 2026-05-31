@@ -1,4 +1,6 @@
-from fastapi import APIRouter
+from typing import Annotated
+
+from fastapi import APIRouter, Path
 
 from app.api.v1.dependencies import WalletServiceDep, PayloadAccessToken
 from app.api.v1.schemas import (
@@ -13,14 +15,23 @@ router = APIRouter()
 
 
 @router.get("/balances")
-async def get_balance(
+async def get_total_balance(
         service: WalletServiceDep,
         payload: PayloadAccessToken,
-        wallet_name: str | None = None,
-        show_total_balance_in_currency: CurrencyEnum | None = None
-) -> ReadWalletSchema | ReadWalletsTotalBalanceSchema:
+        currency: CurrencyEnum = CurrencyEnum.RUB
+) -> ReadWalletsTotalBalanceSchema:
     user_id = payload.get("sub")
-    return await service.get_balance(user_id, wallet_name, show_total_balance_in_currency)
+    return await service.get_total_balance(user_id, currency)
+
+
+@router.get("/one/{wallet_name}")
+async def get_wallet(
+        service: WalletServiceDep,
+        payload: PayloadAccessToken,
+        wallet_name: Annotated[str, Path(min_length=1)],
+) -> ReadWalletSchema:
+    user_id = payload.get("sub")
+    return await service.get_wallet(user_id, wallet_name)
 
 
 @router.get("/all")

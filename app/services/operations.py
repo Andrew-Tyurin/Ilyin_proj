@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Callable
+from typing import Callable, Awaitable
 
 from app.contracts.repository_operations import AbstractRepositoryOperation, AbstractRepositoryOperationHistory
 from app.custom_enum import OperationOrderEnum
@@ -10,7 +10,7 @@ class ServiceOperation:
             self,
             repo_operation: AbstractRepositoryOperation,
             repo_operation_history: AbstractRepositoryOperationHistory,
-            exchange_func: Callable[[str, str], Decimal]
+            exchange_func: Callable[[str, str], Awaitable[Decimal]]
     ):
         self._repo_operation = repo_operation
         self._repo_operation_history = repo_operation_history

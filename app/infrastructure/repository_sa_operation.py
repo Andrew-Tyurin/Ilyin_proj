@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Callable
+from typing import Callable, Awaitable
 
 from fastapi import HTTPException
 from sqlalchemy import update, and_, select
@@ -74,7 +74,7 @@ class SqlAlchemyRepositoryOperation(AbstractRepositoryOperation):
         from_wallet_id = transfer_wallets.get("from_wallet_id")
         to_wallet_id = transfer_wallets.get("to_wallet_id")
         amount = transfer_wallets.get("amount")
-        exchange_func: Callable[[str, str], Decimal] = kwargs.get("exchange_func")
+        exchange_func: Callable[[str, str], Awaitable[Decimal]] = kwargs.get("exchange_func")
 
         from_wallet = await self._session.scalar(
             select(WalletORM)
@@ -91,7 +91,8 @@ class SqlAlchemyRepositoryOperation(AbstractRepositoryOperation):
         if not to_wallet:
             raise raise_404("to_wallet_id", to_wallet_id)
 
-        serialized_amount: Decimal = round(amount * exchange_func(from_wallet.currency, to_wallet.currency), 2)
+        rate = await exchange_func(from_wallet.currency, to_wallet.currency)
+        serialized_amount = round(amount * rate, 2)
 
         try:
             from_wallet.balance -= amount
