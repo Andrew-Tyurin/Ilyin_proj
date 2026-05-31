@@ -4,6 +4,7 @@ from fastapi import Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
+from app.domain.dto import TokenPayloadDTO
 from app.infrastructure.jwt_token_service import JWTokenService
 from app.infrastructure.repository_sa_operation import SqlAlchemyRepositoryOperation, SqlAlchemyRepositoryOperationHistory
 from app.infrastructure.repository_sa_users import SqlAlchemyRepositoryUser
@@ -33,11 +34,11 @@ def get_access_token(credentials: HTTPAuthorizationCredentials = Depends(Securit
 AccessToken = Annotated[str, Depends(get_access_token)]
 
 
-def get_payload(token: AccessToken, service_token: TokenServiceDep) -> dict:
+def get_payload(token: AccessToken, service_token: TokenServiceDep) -> TokenPayloadDTO:
     return service_token.decode_token(token)
 
 
-PayloadAccessToken = Annotated[dict, Depends(get_payload)]
+PayloadAccessToken = Annotated[TokenPayloadDTO, Depends(get_payload)]
 
 
 async def get_async_session() -> AsyncGenerator[AsyncSession, None]:

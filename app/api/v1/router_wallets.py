@@ -20,7 +20,7 @@ async def get_total_balance(
         payload: PayloadAccessToken,
         currency: CurrencyEnum = CurrencyEnum.RUB
 ) -> ReadWalletsTotalBalanceSchema:
-    user_id = payload.get("sub")
+    user_id = payload.sub
     return await service.get_total_balance(user_id, currency)
 
 
@@ -30,7 +30,7 @@ async def get_wallet(
         payload: PayloadAccessToken,
         wallet_name: Annotated[str, Path(min_length=1)],
 ) -> ReadWalletSchema:
-    user_id = payload.get("sub")
+    user_id = payload.sub
     return await service.get_wallet(user_id, wallet_name)
 
 
@@ -39,8 +39,8 @@ async def get_wallets(
         service: WalletServiceDep,
         payload: PayloadAccessToken,
 ) -> ReadWalletsAllSchema:
-    user_id = payload.get("sub")
-    user_name = payload.get("user_name")
+    user_id = payload.sub
+    user_name = payload.user_name
     wallets_user = await service.get_wallets(user_id)
     return {"user_id": user_id, "user_name": user_name, "wallets": wallets_user}
 
@@ -51,5 +51,5 @@ async def create_wallet(
         payload: PayloadAccessToken,
         wallet: CreateWalletSchema
 ):
-    user_id = payload.get("sub")
+    user_id = payload.sub
     return await service.create_wallet(user_id, wallet.model_dump())

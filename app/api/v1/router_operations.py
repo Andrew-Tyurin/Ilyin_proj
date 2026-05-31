@@ -20,7 +20,7 @@ async def add_income(
         operation: CreateOperationSchema,
         payload: PayloadAccessToken,
 ) -> ReadOperationsHistoryShema:
-    user_id = payload.get("sub")
+    user_id = payload.sub
     return await service.add_income(user_id, operation.model_dump())
 
 
@@ -30,7 +30,7 @@ async def add_expense(
         operation: CreateOperationSchema,
         payload: PayloadAccessToken,
 ) -> ReadOperationsHistoryShema:
-    user_id = payload.get("sub")
+    user_id = payload.sub
     return await service.add_expense(user_id, operation.model_dump())
 
 
@@ -40,7 +40,7 @@ async def transfer_between_wallets(
         payload: PayloadAccessToken,
         transfer_wallets: CreateTransferWalletsShema,
 ) -> ReadTransferBetweenWalletsShema:
-    user_id = payload.get("sub")
+    user_id = payload.sub
     from_wallet, to_wallet = await service.transfer_between_wallets(user_id, transfer_wallets.model_dump())
     return ReadTransferBetweenWalletsShema(
         from_wallet=ReadOperationsHistoryShema(**from_wallet),
@@ -56,5 +56,5 @@ async def get_operations_history(
         order_by_data: Annotated[OperationOrderEnum, Query()] = OperationOrderEnum.DECREASE,
         limit: Annotated[int | None, Query(ge=1)] = None,
 ) -> list[ReadOperationsHistoryShema]:
-    user_id = payload.get("sub")
+    user_id = payload.sub
     return await service.get_operations_history(user_id, wallet_id, order_by_data, limit)

@@ -107,14 +107,14 @@ class SqlAlchemyRepositoryOperation(AbstractRepositoryOperation):
                 "wallet_name": from_wallet.name,
                 "currency": from_wallet.currency,
                 "amount": amount,
-                "description": f"transfer into (wallet_name={to_wallet.name}, wallet_id={to_wallet.id})",
+                "description": f"transfer into wallet_id={to_wallet.id}",
             },
             {
                 "wallet_id": to_wallet.id,
                 "wallet_name": to_wallet.name,
                 "currency": to_wallet.currency,
                 "amount": serialized_amount,
-                "description": f"transfer from (wallet_name={from_wallet.name}, wallet_id={from_wallet.id})",
+                "description": f"transfer from wallet_id={from_wallet.id}",
             },
         )
 

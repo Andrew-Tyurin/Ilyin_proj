@@ -6,10 +6,7 @@ from app.custom_enum import CurrencyEnum
 
 
 class ServiceWallet:
-    def __init__(
-            self,
-            repo: AbstractRepositoryWallet,
-            exchange_func: Callable[[str, str], Awaitable[Decimal]]):
+    def __init__(self, repo: AbstractRepositoryWallet, exchange_func: Callable[[str, str], Awaitable[Decimal]]):
         self._repo = repo
         self._exchange_func = exchange_func
 

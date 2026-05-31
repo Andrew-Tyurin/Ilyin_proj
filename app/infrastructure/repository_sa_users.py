@@ -4,6 +4,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from app.contracts.repository_users import AbstractRepositoryUser
+from app.domain.dto import UserWithoutPasswDTO, ExistingUserDTO, CreateUserDTO
 from app.infrastructure.hashing import HashArgon2
 from app.infrastructure.sqlalchemy_models import UserORM
 
@@ -14,31 +15,30 @@ class SqlAlchemyRepositoryUser(AbstractRepositoryUser):
     def __init__(self, session: AsyncSession):
         self._session = session
 
-    async def get_all(self, offset: int):
-        stm = await self._session.execute(
+    async def get_all(self, offset: int) -> list[UserWithoutPasswDTO]:
+        users_row = (await self._session.execute(
             select(UserORM.id, UserORM.user_name)
             .offset(offset)
             .limit(10)
             .order_by(UserORM.id)
-        )
-        users = [dict(user._mapping) for user in stm.all()]
-        return users
+        )).all()
 
-    async def get_one(self, user_id: int):
-        stm = await self._session.execute(
+        return [UserWithoutPasswDTO(**dict(user_row._mapping)) for user_row in users_row]
+
+    async def get_one(self, user_id: int) -> UserWithoutPasswDTO:
+        user_row = (await self._session.execute(
             select(UserORM.id, UserORM.user_name)
             .where(UserORM.id == user_id)
-        )
-        user = stm.one_or_none()
-        if user is None:
+        )).one_or_none()
+
+        if user_row is None:
             raise HTTPException(status_code=404, detail=f"User id - {user_id} does not exist")
 
-        user = dict(user._mapping)
-        return user
+        return UserWithoutPasswDTO(**dict(user_row._mapping))
 
-    async def create(self, user: dict):
-        user_name = user.get("user_name")
-        password = user.get("password")
+    async def create(self, user: CreateUserDTO) -> UserWithoutPasswDTO:
+        user_name = user.user_name
+        password = user.password
         hash_password = self._hash_password.hash(password)
 
         stm = select(UserORM).where(UserORM.user_name == user_name).exists()
@@ -53,28 +53,25 @@ class SqlAlchemyRepositoryUser(AbstractRepositoryUser):
         except IntegrityError as e:
             raise HTTPException(status_code=400, detail=f"Problem with creation User: {e.args[0]}")
 
-        return {"id": user_orm.id, "user_name": user_orm.user_name}
+        return UserWithoutPasswDTO(id=user_orm.id, user_name=user_orm.user_name)
 
-    async def authorization(self, user: dict):
-        detail_error = "Incorrect login or password"
-        user_name = user.get("user_name")
-        password = user.get("password")
+    async def authorization(self, user: ExistingUserDTO) -> UserWithoutPasswDTO:
+        user_name = user.user_name
+        password = user.password
+        error_400 = HTTPException(status_code=400, detail="Incorrect login or password")
 
-        stm = await self._session.execute(
+        user_row = (await self._session.execute(
             select(UserORM.id, UserORM.user_name, UserORM.password)
             .where(UserORM.user_name == user_name)
-        )
-        user = stm.one_or_none()
+        )).one_or_none()
 
-        if user is None:
-            raise HTTPException(status_code=400, detail=detail_error)
+        if user_row is None:
+            raise error_400
 
-        hash_password = user.password
+        hash_password = user_row.password
         valid_password = self._hash_password.verify(password, hash_password)
 
         if not valid_password:
-            raise HTTPException(status_code=400, detail=detail_error)
+            raise error_400
 
-        user = dict(user._mapping)
-        del user["password"]
-        return user
+        return UserWithoutPasswDTO(id=user_row.id, user_name=user_row.user_name)
