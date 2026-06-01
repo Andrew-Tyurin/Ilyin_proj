@@ -4,7 +4,8 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from app.contracts.repository_users import AbstractRepositoryUser
-from app.domain.dto import UserWithoutPasswDTO, ExistingUserDTO, CreateUserDTO
+from app.domain.dto import UserWithoutPasswDTO
+from app.domain.entities import User
 from app.infrastructure.hashing import HashArgon2
 from app.infrastructure.sqlalchemy_models import UserORM
 
@@ -36,7 +37,7 @@ class SqlAlchemyRepositoryUser(AbstractRepositoryUser):
 
         return UserWithoutPasswDTO(**dict(user_row._mapping))
 
-    async def create(self, user: CreateUserDTO) -> UserWithoutPasswDTO:
+    async def create(self, user: User) -> UserWithoutPasswDTO:
         user_name = user.user_name
         password = user.password
         hash_password = self._hash_password.hash(password)
@@ -55,7 +56,7 @@ class SqlAlchemyRepositoryUser(AbstractRepositoryUser):
 
         return UserWithoutPasswDTO(id=user_orm.id, user_name=user_orm.user_name)
 
-    async def authorization(self, user: ExistingUserDTO) -> UserWithoutPasswDTO:
+    async def authorization(self, user: User) -> UserWithoutPasswDTO:
         user_name = user.user_name
         password = user.password
         error_400 = HTTPException(status_code=400, detail="Incorrect login or password")

@@ -1,6 +1,7 @@
 from app.contracts.repository_users import AbstractRepositoryUser
 from app.contracts.token_service import AbstractTokenService
-from app.domain.dto import UserWithoutPasswDTO, ExistingUserDTO, UserAuthorizationDTO, CreateUserDTO
+from app.domain.dto import UserWithoutPasswDTO, UserAuthorizationDTO
+from app.domain.entities import User
 
 
 class ServiceUser:
@@ -18,7 +19,7 @@ class ServiceUser:
     async def get_user(self, user_id: int) -> UserWithoutPasswDTO:
         return await self._repo_user.get_one(user_id)
 
-    async def create_user(self, user: CreateUserDTO) -> UserAuthorizationDTO:
+    async def create_user(self, user: User) -> UserAuthorizationDTO:
         new_user = await self._repo_user.create(user)
         token = self._service_token.encode_token(new_user)
         user_authorization = UserAuthorizationDTO(
@@ -28,7 +29,7 @@ class ServiceUser:
         )
         return user_authorization
 
-    async def user_authorization(self, user: ExistingUserDTO) -> UserAuthorizationDTO:
+    async def user_authorization(self, user: User) -> UserAuthorizationDTO:
         existing_user = await self._repo_user.authorization(user)
         token = self._service_token.encode_token(existing_user)
         user_authorization = UserAuthorizationDTO(

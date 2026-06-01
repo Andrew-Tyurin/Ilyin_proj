@@ -2,18 +2,6 @@ from dataclasses import dataclass
 
 
 @dataclass
-class CreateUserDTO:
-    user_name: str
-    password: str
-
-
-@dataclass
-class ExistingUserDTO:
-    user_name: str
-    password: str
-
-
-@dataclass
 class UserWithoutPasswDTO:
     id: int
     user_name: str

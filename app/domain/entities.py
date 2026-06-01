@@ -5,7 +5,7 @@ from decimal import Decimal
 
 @dataclass
 class User:
-    username: str
+    user_name: str
     password: str
     id: int | None = None
 

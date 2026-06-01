@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
-from app.domain.dto import ExistingUserDTO, UserWithoutPasswDTO, CreateUserDTO
+
+from app.domain.dto import UserWithoutPasswDTO
+from app.domain.entities import User
 
 
 class AbstractRepositoryUser(ABC):
@@ -12,9 +14,9 @@ class AbstractRepositoryUser(ABC):
         pass
 
     @abstractmethod
-    async def create(self, user: CreateUserDTO) -> UserWithoutPasswDTO:
+    async def create(self, user: User) -> UserWithoutPasswDTO:
         pass
 
     @abstractmethod
-    async def authorization(self, user: ExistingUserDTO) -> UserWithoutPasswDTO:
+    async def authorization(self, user: User) -> UserWithoutPasswDTO:
         pass
