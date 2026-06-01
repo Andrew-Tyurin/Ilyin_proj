@@ -3,6 +3,8 @@ from typing import Callable, Awaitable
 
 from app.contracts.repository_wallets import AbstractRepositoryWallet
 from app.custom_enum import CurrencyEnum
+from app.domain.dto import WalletsTotalBalanceDTO, WalletDTO
+from app.domain.entities import Wallet
 
 
 class ServiceWallet:
@@ -10,14 +12,14 @@ class ServiceWallet:
         self._repo = repo
         self._exchange_func = exchange_func
 
-    async def get_total_balance(self, user_id: int, currency: CurrencyEnum):
+    async def get_total_balance(self, user_id: int, currency: CurrencyEnum) -> WalletsTotalBalanceDTO:
         return await self._repo.get_balance(user_id, currency=currency, exchange_func=self._exchange_func)
 
-    async def get_wallet(self, user_id: int,  wallet_name: str):
+    async def get_wallet(self, user_id: int, wallet_name: str) -> WalletDTO:
         return await self._repo.get(user_id, wallet_name)
 
-    async def get_wallets(self, user_id: int):
+    async def get_wallets(self, user_id: int) -> list[WalletDTO]:
         return await self._repo.get_all(user_id)
 
-    async def create_wallet(self, user_id: int, wallet: dict) -> dict:
-        return await self._repo.add(user_id, wallet)
+    async def create_wallet(self, wallet: Wallet) -> WalletDTO:
+        return await self._repo.add(wallet)

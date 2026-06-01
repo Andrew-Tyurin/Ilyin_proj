@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from decimal import Decimal
 
 
 @dataclass
@@ -27,3 +28,19 @@ class UserLifetimeTokenDTO:
     id: int
     user_name: str
     expires_time_life: int
+
+
+@dataclass
+class WalletsTotalBalanceDTO:
+    user_id: int
+    currency: str
+    total_balance: Decimal
+
+
+@dataclass
+class WalletDTO:
+    id: int
+    name: str
+    balance: Decimal
+    currency: str
+    user_id: int

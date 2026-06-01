@@ -13,18 +13,19 @@ class User:
 @dataclass
 class Wallet:
     name: str
-    balance: Decimal
-    user: User
     currency: str
+    user_id: int
+    user: User | None = None
+    balance: Decimal = Decimal("0.00")
     id: int | None = None
 
 
 @dataclass
-class OperationWallet:
-    wallet_id: int
+class Operation:
     type: str
     amount: Decimal
-    created_at: datetime
-    wallet: Wallet
+    wallet_id: int
+    wallet: Wallet | None = None
+    created_at: datetime | None = None
     description: str | None = None
     id: int | None = None

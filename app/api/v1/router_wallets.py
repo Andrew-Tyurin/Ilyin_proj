@@ -5,11 +5,12 @@ from fastapi import APIRouter, Path
 from app.api.v1.dependencies import WalletServiceDep, PayloadAccessToken
 from app.api.v1.schemas import (
     CreateWalletSchema,
-    ReadWalletsAllSchema,
     ReadWalletSchema,
-    ReadWalletsTotalBalanceSchema
+    ReadWalletsTotalBalanceSchema,
+    JustCreatedWalletSchema
 )
 from app.custom_enum import CurrencyEnum
+from app.domain.entities import Wallet
 
 router = APIRouter()
 
@@ -38,11 +39,9 @@ async def get_wallet(
 async def get_wallets(
         service: WalletServiceDep,
         payload: PayloadAccessToken,
-) -> ReadWalletsAllSchema:
+) -> list[ReadWalletSchema]:
     user_id = payload.sub
-    user_name = payload.user_name
-    wallets_user = await service.get_wallets(user_id)
-    return {"user_id": user_id, "user_name": user_name, "wallets": wallets_user}
+    return await service.get_wallets(user_id)
 
 
 @router.post("", status_code=201)
@@ -50,6 +49,11 @@ async def create_wallet(
         service: WalletServiceDep,
         payload: PayloadAccessToken,
         wallet: CreateWalletSchema
-):
+) -> JustCreatedWalletSchema:
     user_id = payload.sub
-    return await service.create_wallet(user_id, wallet.model_dump())
+    wallet = Wallet(user_id=user_id, name=wallet.name, currency=wallet.currency)
+    created_wallet = await service.create_wallet(wallet)
+    return {
+        "message": f"wallet '{created_wallet.name}' created",
+        "wallet": created_wallet
+    }

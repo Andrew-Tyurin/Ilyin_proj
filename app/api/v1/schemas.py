@@ -102,15 +102,16 @@ class ReadWalletSchema(BaseModel):
     name: str
     balance: ReadFieldDecimal
     currency: CurrencyEnum
-
-
-class ReadWalletsAllSchema(BaseModel):
     user_id: int
-    user_name: str
-    wallets: list[ReadWalletSchema]
+
+
+class JustCreatedWalletSchema(BaseModel):
+    message: str
+    wallet: ReadWalletSchema
 
 
 class ReadWalletsTotalBalanceSchema(BaseModel):
+    user_id: int
     currency: CurrencyEnum
     total_balance: ReadFieldDecimal
 
