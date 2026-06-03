@@ -9,7 +9,9 @@ from app.api.v1.schemas import (
     CreateTransferWalletsShema,
     ReadTransferBetweenWalletsShema
 )
-from app.custom_enum import OperationOrderEnum
+from app.custom_enum import OperationOrderEnum, OperationTypeEnum
+from app.domain.dto import WalletUpdateDTO
+from app.domain.entities import Operation
 
 router = APIRouter()
 
@@ -21,7 +23,14 @@ async def add_income(
         payload: PayloadAccessToken,
 ) -> ReadOperationsHistoryShema:
     user_id = payload.sub
-    return await service.add_income(user_id, operation.model_dump())
+    operation_income = Operation(
+        wallet_id=operation.wallet_id,
+        amount=operation.amount,
+        description=operation.description,
+        type=OperationTypeEnum.INCOME
+    )
+    wallet_update = WalletUpdateDTO(id=operation.wallet_id, user_id=user_id)
+    return await service.add_income(operation_income, wallet_update)
 
 
 @router.patch("/expense")
@@ -31,7 +40,14 @@ async def add_expense(
         payload: PayloadAccessToken,
 ) -> ReadOperationsHistoryShema:
     user_id = payload.sub
-    return await service.add_expense(user_id, operation.model_dump())
+    operation_expense = Operation(
+        wallet_id=operation.wallet_id,
+        amount=operation.amount,
+        description=operation.description,
+        type=OperationTypeEnum.EXPENSE
+    )
+    wallet_update = WalletUpdateDTO(id=operation.wallet_id, user_id=user_id)
+    return await service.add_expense(operation_expense, wallet_update)
 
 
 @router.patch("/transfer")
@@ -41,11 +57,12 @@ async def transfer_between_wallets(
         transfer_wallets: CreateTransferWalletsShema,
 ) -> ReadTransferBetweenWalletsShema:
     user_id = payload.sub
-    from_wallet, to_wallet = await service.transfer_between_wallets(user_id, transfer_wallets.model_dump())
-    return ReadTransferBetweenWalletsShema(
-        from_wallet=ReadOperationsHistoryShema(**from_wallet),
-        to_wallet=ReadOperationsHistoryShema(**to_wallet),
-    )
+    amount = transfer_wallets.amount
+    from_wallet_update = WalletUpdateDTO(id=transfer_wallets.from_wallet_id, user_id=user_id)
+    to_wallet_update = WalletUpdateDTO(id=transfer_wallets.to_wallet_id, user_id=user_id)
+    results = await service.transfer_between_wallets(from_wallet_update, to_wallet_update, amount)
+    response_from_wallet, response_to_wallet = results
+    return {"from_wallet": response_from_wallet, "to_wallet": response_to_wallet}
 
 
 @router.get("/history")

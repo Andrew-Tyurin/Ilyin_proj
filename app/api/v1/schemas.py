@@ -120,7 +120,7 @@ class ReadOperationSchema(BaseModel):
     id: int
     type: str
     amount: ReadFieldDecimal
-    description: str
+    description: str | None
     created_at: datetime
 
 

@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime
 from decimal import Decimal
 
 
@@ -44,3 +45,29 @@ class WalletDTO:
     balance: Decimal
     currency: str
     user_id: int
+
+
+@dataclass
+class WalletUpdateDTO:
+    id: int | None = None
+    name: str | None = None
+    balance: Decimal | None = None
+    currency: str | None = None
+    user_id: int | None = None
+
+
+@dataclass
+class OperationDTO:
+    id: int
+    type: str
+    amount: Decimal
+    description: str
+    created_at: datetime
+
+
+@dataclass
+class OperationHistoryDTO:
+    wallet_id: int
+    wallet_name: str
+    currency: str
+    operation: OperationDTO
