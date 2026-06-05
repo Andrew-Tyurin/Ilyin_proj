@@ -56,8 +56,8 @@ AsyncSessionDep = Annotated[AsyncSession, Depends(get_async_session)]
 
 def get_service_user(session: AsyncSessionDep, service_token: TokenServiceDep):
     repo_user = SqlAlchemyRepositoryUser(session)
-    uof = SqlAlchemyUnitOfWork(session)
-    return ServiceUser(repo_user=repo_user, service_token=service_token, uow=uof)
+    uow = SqlAlchemyUnitOfWork(session)
+    return ServiceUser(repo_user=repo_user, service_token=service_token, uow=uow)
 
 
 UserServiceDep = Annotated[ServiceUser, Depends(get_service_user)]
@@ -65,7 +65,8 @@ UserServiceDep = Annotated[ServiceUser, Depends(get_service_user)]
 
 def get_service_wallet(session: AsyncSessionDep):
     repo = SqlAlchemyRepositoryWallet(session)
-    return ServiceWallet(repo, get_exchange_rate)
+    uow = SqlAlchemyUnitOfWork(session)
+    return ServiceWallet(repo=repo, exchange_func=get_exchange_rate, uow=uow)
 
 
 WalletServiceDep = Annotated[ServiceWallet, Depends(get_service_wallet)]

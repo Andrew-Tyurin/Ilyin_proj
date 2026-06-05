@@ -3,6 +3,7 @@ from decimal import Decimal
 
 from sqlalchemy import (
     String,
+    UniqueConstraint,
     CheckConstraint,
     ForeignKey,
     BigInteger,
@@ -45,6 +46,7 @@ class WalletORM(Base):
 
     __table_args__ = (
         CheckConstraint(f"balance >= 0.00", name="wallet_balance"),
+        UniqueConstraint("name", "user_id", name="unique_wallet_user_id"),
     )
 
 

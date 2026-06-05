@@ -2,7 +2,6 @@ import asyncio
 from decimal import Decimal
 from typing import Callable, Awaitable
 
-from fastapi import HTTPException
 from sqlalchemy import select, and_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio.session import AsyncSession
@@ -10,7 +9,7 @@ from sqlalchemy.ext.asyncio.session import AsyncSession
 from app.contracts.repository_wallets import AbstractRepositoryWallet
 from app.custom_enum import CurrencyEnum
 from app.domain.dto import WalletsTotalBalanceDTO, WalletDTO
-from app.domain.entities import Wallet
+from app.domain.entities import Wallet, WalletNotFoundError, ObjectAlreadyExistsError
 from app.infrastructure.sqlalchemy_models import WalletORM
 
 
@@ -39,7 +38,7 @@ class SqlAlchemyRepositoryWallet(AbstractRepositoryWallet):
         wallet = stm.one_or_none()
 
         if wallet is None:
-            raise HTTPException(status_code=404, detail=f"Wallet '{wallet_name}' does not exist")
+            raise WalletNotFoundError()
 
         return WalletDTO(**dict(wallet._mapping))
 
@@ -53,20 +52,11 @@ class SqlAlchemyRepositoryWallet(AbstractRepositoryWallet):
         return [WalletDTO(**dict(wallet._mapping)) for wallet in wallets_result]
 
     async def add(self, wallet: Wallet) -> WalletDTO:
-        stm = (
-            select(WalletORM.id)
-            .where(and_(WalletORM.name == wallet.name, WalletORM.user_id == wallet.user_id))
-            .exists()
-        )
-        is_wallet = await self._session.scalar(select(stm))
-
-        if is_wallet:
-            raise HTTPException(status_code=400, detail=f"Wallet '{wallet.name}' already exists")
         try:
             orm_wallet = WalletORM(user_id=wallet.user_id, name=wallet.name, currency=wallet.currency)
             self._session.add(orm_wallet)
-            await self._session.commit()
-        except IntegrityError as e:
-            raise HTTPException(status_code=400, detail=f"Problem with creation Wallet: {e.args[0]}")
+            await self._session.flush()
+        except IntegrityError:
+            raise ObjectAlreadyExistsError()
 
         return WalletDTO(**orm_wallet.model_dump())
