@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
+
 from app.domain.dto import UserWithoutPasswDTO, TokenPayloadDTO, UserLifetimeTokenDTO
 
 
-class AbstractTokenService(ABC):
+class InterfaceToken(ABC):
     @abstractmethod
     def encode_token(self, user: UserWithoutPasswDTO) -> str:
         pass

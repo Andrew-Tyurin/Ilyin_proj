@@ -29,3 +29,39 @@ class Operation:
     created_at: datetime | None = None
     description: str | None = None
     id: int | None = None
+
+
+class BaseDomainError(Exception):
+    pass
+
+
+class ObjectAlreadyExistsError(Exception):
+    pass
+
+
+class UserNotFoundError(Exception):
+    pass
+
+
+class UserAlreadyExistsError(Exception):
+    pass
+
+
+class UserIncorrectDataError(Exception):
+    pass
+
+
+class WalletNotFoundError(Exception):
+    pass
+
+
+class WalletAlreadyExistsError(Exception):
+    pass
+
+
+class OperationNotFoundError(Exception):
+    pass
+
+
+class OperationAlreadyExistsError(Exception):
+    pass

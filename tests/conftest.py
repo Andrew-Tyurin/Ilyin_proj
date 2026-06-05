@@ -3,7 +3,7 @@ from typing import AsyncGenerator
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
 
-from app.api.v1.dependencies import InstanceJWTokenService, Token
+from app.api.v1.dependencies import InstanceJWToken, Token
 from app.infrastructure.hashing import HashArgon2
 from app.infrastructure.sqlalchemy_db import (
     async_drop_table,
@@ -80,12 +80,12 @@ async def token_user(hash_argon2: HashArgon2) -> Token:
         session.add(user_orm)
         await session.commit()
     data_for_payload = {"id": user_orm.id, "user_name": user_orm.user_name}
-    return InstanceJWTokenService.encode_token(data_for_payload)
+    return InstanceJWToken.encode_token(data_for_payload)
 
 
 @pytest_asyncio.fixture
 async def token_user_and_existing_wallets(token_user: Token) -> Token:
-    payload = InstanceJWTokenService.decode_token(token_user)
+    payload = InstanceJWToken.decode_token(token_user)
     user_id = payload.get("sub")
 
     async with AsyncSessionLocal() as session:

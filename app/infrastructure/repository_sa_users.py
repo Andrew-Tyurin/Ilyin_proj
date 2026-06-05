@@ -1,11 +1,10 @@
-from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from app.contracts.repository_users import AbstractRepositoryUser
 from app.domain.dto import UserWithoutPasswDTO
-from app.domain.entities import User
+from app.domain.entities import User, UserNotFoundError, UserIncorrectDataError, ObjectAlreadyExistsError
 from app.infrastructure.hashing import HashArgon2
 from app.infrastructure.sqlalchemy_models import UserORM
 
@@ -33,7 +32,7 @@ class SqlAlchemyRepositoryUser(AbstractRepositoryUser):
         )).one_or_none()
 
         if user_row is None:
-            raise HTTPException(status_code=404, detail=f"User id - {user_id} does not exist")
+            raise UserNotFoundError()
 
         return UserWithoutPasswDTO(**dict(user_row._mapping))
 
@@ -42,24 +41,18 @@ class SqlAlchemyRepositoryUser(AbstractRepositoryUser):
         password = user.password
         hash_password = self._hash_password.hash(password)
 
-        stm = select(UserORM).where(UserORM.user_name == user_name).exists()
-        result_bool = await self._session.scalar(select(stm))
-        if result_bool:
-            raise HTTPException(status_code=400, detail=f"User '{user_name}' already exists")
-
+        user_orm = UserORM(user_name=user_name, password=hash_password)
         try:
-            user_orm = UserORM(user_name=user_name, password=hash_password)
             self._session.add(user_orm)
-            await self._session.commit()
-        except IntegrityError as e:
-            raise HTTPException(status_code=400, detail=f"Problem with creation User: {e.args[0]}")
+            await self._session.flush()
+        except IntegrityError:
+            raise ObjectAlreadyExistsError()
 
         return UserWithoutPasswDTO(id=user_orm.id, user_name=user_orm.user_name)
 
     async def authorization(self, user: User) -> UserWithoutPasswDTO:
         user_name = user.user_name
         password = user.password
-        error_400 = HTTPException(status_code=400, detail="Incorrect login or password")
 
         user_row = (await self._session.execute(
             select(UserORM.id, UserORM.user_name, UserORM.password)
@@ -67,12 +60,11 @@ class SqlAlchemyRepositoryUser(AbstractRepositoryUser):
         )).one_or_none()
 
         if user_row is None:
-            raise error_400
+            raise UserIncorrectDataError()
 
-        hash_password = user_row.password
-        valid_password = self._hash_password.verify(password, hash_password)
+        valid_password = self._hash_password.verify(password, user_row.password)
 
         if not valid_password:
-            raise error_400
+            raise UserIncorrectDataError()
 
         return UserWithoutPasswDTO(id=user_row.id, user_name=user_row.user_name)
