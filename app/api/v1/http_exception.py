@@ -2,21 +2,31 @@ from fastapi import HTTPException
 
 
 def user_not_found_404(user_id: int) -> HTTPException:
-    return HTTPException(status_code=404, detail=f"User id '{user_id}' not found")
+    return HTTPException(status_code=404, detail=f"User '{user_id=}' not found")
 
 
 def user_already_exists_400(user_name: str) -> HTTPException:
-    return HTTPException(status_code=400, detail=f"User '{user_name}' already exists")
+    return HTTPException(status_code=400, detail=f"User {user_name=} already exists")
 
 
 def user_incorrect_data_400() -> HTTPException:
     return HTTPException(status_code=400, detail=f"Incorrect login or password")
 
 
-def wallet_not_found_404(wallet_name: str) -> HTTPException:
-    return HTTPException(status_code=404, detail=f"Wallet '{wallet_name}' does not exist")
+def wallet_not_found_name_404(wallet_name: str) -> HTTPException:
+    return HTTPException(status_code=404, detail=f"Wallet {wallet_name=} does not exist")
+
+
+def wallet_not_found_id_404(wallet_id: int) -> HTTPException:
+    return HTTPException(status_code=404, detail=f"Wallet {wallet_id=} does not exist")
 
 
 def wallet_already_exists_400(wallet_name: str) -> HTTPException:
-    return HTTPException(status_code=400, detail=f"Wallet '{wallet_name}' already exists")
+    return HTTPException(status_code=400, detail=f"Wallet {wallet_name=} already exists")
 
+
+def wallet_not_valid_balance_400(wallet_id: int) -> HTTPException:
+    return HTTPException(
+        status_code=400,
+        detail=f"Wallet {wallet_id=} balance cannot be less than zero and more 999_999_999_999.99"
+    )

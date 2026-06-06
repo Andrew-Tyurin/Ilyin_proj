@@ -5,7 +5,7 @@ from fastapi import APIRouter, Query, Path
 from app.api.v1.dependencies import UserServiceDep, TokenServiceDep, AccessToken
 from app.api.v1.http_exception import user_not_found_404, user_already_exists_400, user_incorrect_data_400
 from app.api.v1.schemas import BaseUserSchema, ReadUserSchema, ReadUserAndTokenSchema, ReadPayloadTokenSchema
-from app.domain.entities import User, UserNotFoundError, UserIncorrectDataError, ObjectAlreadyExistsError
+from app.domain.entities import User, UserNotFoundError, UserIncorrectDataError, UserAlreadyExistsError
 
 router = APIRouter()
 
@@ -20,7 +20,7 @@ async def create_user(service: UserServiceDep, user: BaseUserSchema) -> ReadUser
     user_dto = User(**user.model_dump())
     try:
         result = await service.create_user(user_dto)
-    except ObjectAlreadyExistsError:
+    except UserAlreadyExistsError:
         raise user_already_exists_400(user.user_name)
     return result
 

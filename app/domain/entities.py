@@ -35,10 +35,6 @@ class BaseDomainError(Exception):
     pass
 
 
-class ObjectAlreadyExistsError(Exception):
-    pass
-
-
 class UserNotFoundError(Exception):
     pass
 
@@ -59,9 +55,5 @@ class WalletAlreadyExistsError(Exception):
     pass
 
 
-class OperationNotFoundError(Exception):
-    pass
-
-
-class OperationAlreadyExistsError(Exception):
+class WalletUpdateError(Exception):
     pass

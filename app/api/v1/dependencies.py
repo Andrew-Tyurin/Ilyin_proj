@@ -75,7 +75,13 @@ WalletServiceDep = Annotated[ServiceWallet, Depends(get_service_wallet)]
 def get_service_operation(session: AsyncSessionDep):
     repo_operation = SqlAlchemyRepositoryOperation(session)
     repo_operation_history = SqlAlchemyRepositoryOperationHistory(session)
-    return ServiceOperation(repo_operation, repo_operation_history, get_exchange_rate)
+    uow = SqlAlchemyUnitOfWork(session)
+    return ServiceOperation(
+        repo_operation=repo_operation,
+        repo_operation_history=repo_operation_history,
+        exchange_func=get_exchange_rate,
+        uow=uow,
+    )
 
 
 OperationServiceDep = Annotated[ServiceOperation, Depends(get_service_operation)]

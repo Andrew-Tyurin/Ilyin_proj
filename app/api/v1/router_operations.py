@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Query
 
 from app.api.v1.dependencies import OperationServiceDep, PayloadAccessToken
+from app.api.v1.http_exception import wallet_not_found_id_404, wallet_not_valid_balance_400
 from app.api.v1.schemas import (
     CreateOperationSchema,
     ReadOperationsHistoryShema,
@@ -11,7 +12,7 @@ from app.api.v1.schemas import (
 )
 from app.custom_enum import OperationOrderEnum, OperationTypeEnum
 from app.domain.dto import WalletUpdateDTO
-from app.domain.entities import Operation
+from app.domain.entities import Operation, WalletNotFoundError, WalletUpdateError
 
 router = APIRouter()
 
@@ -30,7 +31,13 @@ async def add_income(
         type=OperationTypeEnum.INCOME
     )
     wallet_update = WalletUpdateDTO(id=operation.wallet_id, user_id=user_id)
-    return await service.add_income(operation_income, wallet_update)
+    try:
+        result = await service.add_income(operation_income, wallet_update)
+    except WalletNotFoundError:
+        raise wallet_not_found_id_404(operation.wallet_id)
+    except WalletUpdateError:
+        raise wallet_not_valid_balance_400(operation.wallet_id)
+    return result
 
 
 @router.patch("/expense")
@@ -47,7 +54,13 @@ async def add_expense(
         type=OperationTypeEnum.EXPENSE
     )
     wallet_update = WalletUpdateDTO(id=operation.wallet_id, user_id=user_id)
-    return await service.add_expense(operation_expense, wallet_update)
+    try:
+        result = await service.add_expense(operation_expense, wallet_update)
+    except WalletNotFoundError:
+        raise wallet_not_found_id_404(operation.wallet_id)
+    except WalletUpdateError:
+        raise wallet_not_valid_balance_400(operation.wallet_id)
+    return result
 
 
 @router.patch("/transfer")
@@ -60,7 +73,15 @@ async def transfer_between_wallets(
     amount = transfer_wallets.amount
     from_wallet_update = WalletUpdateDTO(id=transfer_wallets.from_wallet_id, user_id=user_id)
     to_wallet_update = WalletUpdateDTO(id=transfer_wallets.to_wallet_id, user_id=user_id)
-    results = await service.transfer_between_wallets(from_wallet_update, to_wallet_update, amount)
+    try:
+        results = await service.transfer_between_wallets(from_wallet_update, to_wallet_update, amount)
+    except WalletNotFoundError as e:
+        user_id_error = e.args[0]
+        raise wallet_not_found_id_404(user_id_error)
+    except WalletUpdateError as e:
+        user_id_error = e.args[0]
+        raise wallet_not_valid_balance_400(user_id_error)
+
     response_from_wallet, response_to_wallet = results
     return {"from_wallet": response_from_wallet, "to_wallet": response_to_wallet}
 
@@ -74,4 +95,8 @@ async def get_operations_history(
         limit: Annotated[int | None, Query(ge=1)] = None,
 ) -> list[ReadOperationsHistoryShema]:
     user_id = payload.sub
-    return await service.get_operations_history(user_id, wallet_id, order_by_data, limit)
+    try:
+        result = await service.get_operations_history(user_id, wallet_id, order_by_data, limit)
+    except WalletNotFoundError:
+        raise wallet_not_found_id_404(wallet_id)
+    return result

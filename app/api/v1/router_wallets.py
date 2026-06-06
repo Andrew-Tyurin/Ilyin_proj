@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Path
 
 from app.api.v1.dependencies import WalletServiceDep, PayloadAccessToken
-from app.api.v1.http_exception import wallet_not_found_404, wallet_already_exists_400
+from app.api.v1.http_exception import wallet_already_exists_400, wallet_not_found_name_404
 from app.api.v1.schemas import (
     CreateWalletSchema,
     ReadWalletSchema,
@@ -11,7 +11,7 @@ from app.api.v1.schemas import (
     JustCreatedWalletSchema
 )
 from app.custom_enum import CurrencyEnum
-from app.domain.entities import Wallet, WalletNotFoundError, ObjectAlreadyExistsError
+from app.domain.entities import Wallet, WalletNotFoundError, WalletAlreadyExistsError
 
 router = APIRouter()
 
@@ -36,7 +36,7 @@ async def get_wallet(
     try:
         result = await service.get_wallet(user_id, wallet_name)
     except WalletNotFoundError:
-        raise wallet_not_found_404(wallet_name)
+        raise wallet_not_found_name_404(wallet_name)
     return result
 
 
@@ -59,7 +59,7 @@ async def create_wallet(
     wallet = Wallet(user_id=user_id, name=wallet.name, currency=wallet.currency)
     try:
         created_wallet = await service.create_wallet(wallet)
-    except ObjectAlreadyExistsError:
+    except WalletAlreadyExistsError:
         raise wallet_already_exists_400(wallet.name)
     return {
         "message": f"wallet '{created_wallet.name}' created",

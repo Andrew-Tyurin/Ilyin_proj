@@ -1,20 +1,15 @@
 from decimal import Decimal
 from typing import Callable, Awaitable
 
-from fastapi import HTTPException
 from sqlalchemy import update, and_, select, exists
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, DBAPIError
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from app.contracts.repository_operations import AbstractRepositoryOperation, AbstractRepositoryOperationHistory
 from app.custom_enum import OperationOrderEnum
 from app.domain.dto import WalletUpdateDTO, OperationDTO, OperationHistoryDTO
-from app.domain.entities import Operation, Wallet
+from app.domain.entities import Operation, Wallet, WalletNotFoundError, WalletUpdateError
 from app.infrastructure.sqlalchemy_models import WalletORM, OperationWalletORM
-
-
-def raise_404(name_value: str, value: int | str):
-    raise HTTPException(status_code=404, detail=f"Wallet '{name_value}={value}' not found")
 
 
 class SqlAlchemyRepositoryOperation(AbstractRepositoryOperation):
@@ -22,16 +17,19 @@ class SqlAlchemyRepositoryOperation(AbstractRepositoryOperation):
         self._session = session
 
     async def addition(self, wallet: WalletUpdateDTO, add_amount: Decimal) -> Wallet:
-        stmt = await self._session.execute(
-            update(WalletORM)
-            .where(and_(WalletORM.id == wallet.id, WalletORM.user_id == wallet.user_id))
-            .values(balance=WalletORM.balance + add_amount)
-            .returning(WalletORM.name, WalletORM.currency)
-        )
-        result = stmt.one_or_none()
+        try:
+            stmt = await self._session.execute(
+                update(WalletORM)
+                .where(and_(WalletORM.id == wallet.id, WalletORM.user_id == wallet.user_id))
+                .values(balance=WalletORM.balance + add_amount)
+                .returning(WalletORM.name, WalletORM.currency)
+            )
+            result = stmt.one_or_none()
+        except (IntegrityError, DBAPIError):
+            raise WalletUpdateError()
 
         if result is None:
-            raise raise_404("wallet_id", wallet.id)
+            raise WalletNotFoundError()
 
         return Wallet(
             id=wallet.id,
@@ -50,11 +48,11 @@ class SqlAlchemyRepositoryOperation(AbstractRepositoryOperation):
                 .returning(WalletORM.name, WalletORM.currency)
             )
             result = stmt.one_or_none()
-        except IntegrityError as e:
-            raise HTTPException(status_code=400, detail=f"Problem updating object {wallet.id=}\n{e.args[0]}")
+        except IntegrityError:
+            raise WalletUpdateError()
 
         if result is None:
-            raise raise_404("wallet_id", wallet.id)
+            raise WalletNotFoundError()
 
         return Wallet(
             id=wallet.id,
@@ -82,21 +80,26 @@ class SqlAlchemyRepositoryOperation(AbstractRepositoryOperation):
             .where(and_(WalletORM.id == to_wallet.id, WalletORM.user_id == to_wallet.user_id))
         )
 
-        if not from_wallet_orm:
-            raise raise_404("from_wallet_id", from_wallet.id)
+        if from_wallet_orm is None:
+            raise WalletNotFoundError(from_wallet.id)
 
-        if not to_wallet_orm:
-            raise raise_404("to_wallet_id", to_wallet.id)
+        if to_wallet_orm is None:
+            raise WalletNotFoundError(to_wallet.id)
 
         rate = await exchange_func(from_wallet_orm.currency, to_wallet_orm.currency)
         serialized_amount = round(amount * rate, 2)
 
         try:
             from_wallet_orm.balance -= amount
+            await self._session.flush()
+        except IntegrityError:
+            raise WalletUpdateError(from_wallet.id)
+
+        try:
             to_wallet_orm.balance += serialized_amount
             await self._session.flush()
-        except IntegrityError as e:
-            raise HTTPException(status_code=400, detail=f"Problem updating object:\n{e.args[0]}")
+        except (IntegrityError, DBAPIError):
+            raise WalletUpdateError(to_wallet.id)
 
         from_wallet_updated = Wallet(
             id=from_wallet_orm.id,
@@ -135,7 +138,7 @@ class SqlAlchemyRepositoryOperationHistory(AbstractRepositoryOperationHistory):
             description=description,
         )
         self._session.add(operation_orm)
-        await self._session.commit()
+        await self._session.flush()
 
         operation = OperationDTO(
             id=operation_orm.id,
@@ -181,7 +184,7 @@ class SqlAlchemyRepositoryOperationHistory(AbstractRepositoryOperationHistory):
             )
             result_bool = await self._session.scalar(select(stm))
             if not result_bool:
-                raise raise_404("wallet_id", wallet_id)
+                raise WalletNotFoundError()
 
             stmt = stmt.where(OperationWalletORM.wallet_id == wallet_id)
 
@@ -219,7 +222,6 @@ class SqlAlchemyRepositoryOperationHistory(AbstractRepositoryOperationHistory):
             to_operation_and_wallet: tuple[Operation, Wallet]
     ) -> tuple[OperationHistoryDTO, OperationHistoryDTO]:
         operations_created_and_wallets: list[tuple] = []
-
         for operation, wallet in (from_operation_and_wallet, to_operation_and_wallet):
             operation_orm = OperationWalletORM(
                 wallet_id=operation.wallet_id,
@@ -229,7 +231,7 @@ class SqlAlchemyRepositoryOperationHistory(AbstractRepositoryOperationHistory):
             )
             self._session.add(operation_orm)
             operations_created_and_wallets.append((operation_orm, wallet))
-        await self._session.commit()
+        await self._session.flush()
 
         response_operation_history = []
         for operation, wallet in operations_created_and_wallets:

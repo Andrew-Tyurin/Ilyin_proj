@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from app.contracts.repository_users import AbstractRepositoryUser
 from app.domain.dto import UserWithoutPasswDTO
-from app.domain.entities import User, UserNotFoundError, UserIncorrectDataError, ObjectAlreadyExistsError
+from app.domain.entities import User, UserNotFoundError, UserIncorrectDataError, UserAlreadyExistsError
 from app.infrastructure.hashing import HashArgon2
 from app.infrastructure.sqlalchemy_models import UserORM
 
@@ -38,15 +38,14 @@ class SqlAlchemyRepositoryUser(AbstractRepositoryUser):
 
     async def create(self, user: User) -> UserWithoutPasswDTO:
         user_name = user.user_name
-        password = user.password
-        hash_password = self._hash_password.hash(password)
+        hash_password = self._hash_password.hash(user.password)
 
         user_orm = UserORM(user_name=user_name, password=hash_password)
         try:
             self._session.add(user_orm)
             await self._session.flush()
         except IntegrityError:
-            raise ObjectAlreadyExistsError()
+            raise UserAlreadyExistsError()
 
         return UserWithoutPasswDTO(id=user_orm.id, user_name=user_orm.user_name)
 

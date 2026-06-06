@@ -1,8 +1,8 @@
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from app.contracts.unit_of_work_interface import InterfaceUnitOfWork
-from app.domain.entities import ObjectAlreadyExistsError, BaseDomainError
+from app.domain.entities import BaseDomainError
 
 
 class SqlAlchemyUnitOfWork(InterfaceUnitOfWork):
@@ -12,9 +12,6 @@ class SqlAlchemyUnitOfWork(InterfaceUnitOfWork):
     async def commit(self) -> None:
         try:
             await self._session.commit()
-        except IntegrityError:
-            raise ObjectAlreadyExistsError()
-
         except SQLAlchemyError:
             raise BaseDomainError()
 

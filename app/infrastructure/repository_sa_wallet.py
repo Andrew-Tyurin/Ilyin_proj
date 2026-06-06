@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio.session import AsyncSession
 from app.contracts.repository_wallets import AbstractRepositoryWallet
 from app.custom_enum import CurrencyEnum
 from app.domain.dto import WalletsTotalBalanceDTO, WalletDTO
-from app.domain.entities import Wallet, WalletNotFoundError, ObjectAlreadyExistsError
+from app.domain.entities import Wallet, WalletNotFoundError, WalletAlreadyExistsError
 from app.infrastructure.sqlalchemy_models import WalletORM
 
 
@@ -57,6 +57,6 @@ class SqlAlchemyRepositoryWallet(AbstractRepositoryWallet):
             self._session.add(orm_wallet)
             await self._session.flush()
         except IntegrityError:
-            raise ObjectAlreadyExistsError()
+            raise WalletAlreadyExistsError()
 
         return WalletDTO(**orm_wallet.model_dump())
