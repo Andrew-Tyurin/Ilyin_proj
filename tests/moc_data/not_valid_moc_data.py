@@ -18,10 +18,11 @@ expected_empty_username = {'ctx': {'error': {}}, 'input': '     ', 'loc': ['body
 offset_negative_100 = -100
 expected_offset_negative_100 = {'ctx': {'ge': 0}, 'input': '-100', 'loc': ['query', 'offset'], 'msg': 'Input should be greater than or equal to 0', 'type': 'greater_than_equal'}
 
-expected_user_exist = "User 'test_user_1' already exists"
+exists_user_name = 'test_user_1'
+expected_user_exist = f"User user_name='{exists_user_name}' already exists"
 
 non_user_existent_id = 3
-expected_user_by_non_existent_id = 'User id - 3 does not exist'
+expected_user_by_non_existent_id = f"User user_id={non_user_existent_id} not found"
 
 not_valid_user = {"user_name": "test_user3", "password": "12345",}
 expected_user_not_valid_data_authorization = "Incorrect login or password"
@@ -34,28 +35,51 @@ expected_not_valid_token = "access-token expired or invalid"
 expected_without_token = "Not authenticated"
 
 non_existent_wallet_name = "noname"
-expected_without_wallet_name = "Wallet 'noname' does not exist"
+expected_without_wallet_name = f"Wallet wallet_name='{non_existent_wallet_name}' does not exist"
 
 not_valid_token = "not_valid_token"
 
-create_wallet_balance_negative_100 = {"name": "SBER", "initial_balance": -100}
-expected_create_wallet_balance_negative_100 = {'ctx': {'ge': 0}, 'input': -100, 'loc': ['body', 'initial_balance'], 'msg': 'Input should be greater than or equal to 0', 'type': 'greater_than_equal'}
+create_wallet_non_existent_currency = {"name": "SBER", "currency": 'twd'}
+expected_wallet_non_existent_currency = {'ctx': {'expected': "'rub', 'usd' or 'eur'"}, 'input': 'twd', 'loc': ['body', 'currency'], 'msg': "Input should be 'rub', 'usd' or 'eur'", 'type': 'enum'}
 
-expected_wallet_exist = "Wallet 'SBER' already exists"
+wallet_exist_name = 'SBER'
+expected_wallet_exist = f"Wallet wallet_name='{wallet_exist_name}' already exists"
 
 
+exist_wallet_id = 1
 wallet_add_negative_amount = {
-    "wallet_name": "SBER",
+    "wallet_id": exist_wallet_id,
     "amount": -100,
     "description": "test-text"
 }
-expected_wallet_add_negative_amount = {'ctx': {'ge': 1}, 'input': -100, 'loc': ['body', 'amount'], 'msg': 'Input should be greater than or equal to 1', 'type': 'greater_than_equal'}
+expected_wallet_add_negative_amount = {'ctx': {'ge': 0.01}, 'input': -100, 'loc': ['body', 'amount'], 'msg': 'Input should be greater than or equal to 0.01', 'type': 'greater_than_equal'}
 
+wallet_add_income_greater_balance = {
+    "wallet_id": exist_wallet_id,
+    "amount": 100_000_000_000_000,
+    "description": "test-text"
+}
 wallet_add_expense_greater_balance = {
-    "wallet_name": "SBER",
+    "wallet_id": exist_wallet_id,
     "amount": 1000,
     "description": "test-text"
 }
+transfer_wallets_insufficient_funds = {
+    "from_wallet_id": 1,
+    "to_wallet_id": 2,
+    "amount": 10_000,
+}
+expected_wallet_greater_or_less_balance = f"Wallet wallet_id={exist_wallet_id} balance cannot be less than zero and more 999_999_999_999.99"
 
-expected_wallet_add_expense_greater_balance_chunk_1 = "Problem updating object wallet_name='SBER'"
-expected_wallet_add_expense_greater_balance_chunk_2 = "DETAIL:  Failing row contains (1, SBER, -600, 1)."
+transfer_not_valid_between_wallets = {
+    "from_wallet_id": 1,
+    "to_wallet_id": 1,
+    "amount": 100,
+}
+expected_transfer_not_valid_between_wallets = {'ctx': {'error': {}}, 'input': 1, 'loc': ['body', 'to_wallet_id'], 'msg': 'Value error, same wallets ids; (from_wallet_id=1) == (to_wallet_id=1) - unacceptable', 'type': 'value_error'}
+
+non_existent_wallet_id = 10
+expected_not_exist_wallet_id = f"Wallet wallet_id={non_existent_wallet_id} does not exist"
+
+non_existent_order_by_data = 'non-value'
+expected_non_existent_order_by_data = {'ctx': {'expected': "'increase' or 'decrease'"}, 'input': 'non-value', 'loc': ['query', 'order_by_data'], 'msg': "Input should be 'increase' or 'decrease'", 'type': 'enum'}

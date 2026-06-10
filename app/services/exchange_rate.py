@@ -14,9 +14,7 @@ EXCHANGE_RATE_DICT: dict[tuple[str, str], Decimal] = {
 }
 
 
-async def get_exchange_rates_via_an_api(from_currency: CurrencyEnum, to_currency: CurrencyEnum):
-    url = f"https://latest.currency-api.pages.dev/v1/currencies/{from_currency}.json"
-
+async def get_exchange_rates_via_an_api(from_currency: CurrencyEnum, to_currency: CurrencyEnum, url: str) -> Decimal:
     async with httpx.AsyncClient() as client:
         response = await client.get(url, timeout=5)
         response.raise_for_status()  # raise except если статус код != 200
@@ -27,13 +25,18 @@ async def get_exchange_rates_via_an_api(from_currency: CurrencyEnum, to_currency
 
 
 async def get_exchange_rate(from_currency: CurrencyEnum, to_currency: CurrencyEnum) -> Decimal:
+    url_1 = f"https://latest.currency-api.pages.dev/v1/currencies/{from_currency}.json"
+    url_2 = f"https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/{from_currency}.json"
+
     if from_currency == to_currency:
         return Decimal("1.00")
 
-    try:
-        rate = await get_exchange_rates_via_an_api(from_currency, to_currency)
-    except Exception:
-        key = (from_currency, to_currency)
-        return EXCHANGE_RATE_DICT.get(key)
-
-    return rate
+    for url in [url_1, url_2]:
+        try:
+            rate = await get_exchange_rates_via_an_api(from_currency, to_currency, url)
+        except Exception:
+            continue
+        else:
+            return rate
+    key = (from_currency, to_currency)
+    return EXCHANGE_RATE_DICT.get(key)

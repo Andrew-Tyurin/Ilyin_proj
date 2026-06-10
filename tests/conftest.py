@@ -4,6 +4,7 @@ import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
 
 from app.api.v1.dependencies import InstanceJWToken, Token
+from app.domain.dto import UserWithoutPasswDTO
 from app.infrastructure.hashing import HashArgon2
 from app.infrastructure.sqlalchemy_db import (
     async_drop_table,
@@ -11,11 +12,21 @@ from app.infrastructure.sqlalchemy_db import (
     async_truncate_tables,
     AsyncSessionLocal
 )
-from app.infrastructure.sqlalchemy_models import UserORM, WalletORM
+from app.infrastructure.sqlalchemy_models import UserORM, WalletORM, OperationWalletORM
 from app.main import app
-from moc_data.valid_moc_data import create_user1, create_user2, user1_create_wallet1, user1_create_wallet2
+from moc_data.valid_moc_data import (
+    create_user1,
+    create_user2,
+    user1_create_wallet_rub,
+    user1_create_wallet_usd,
+    user1_create_full_wallet_rub,
+    user1_create_full_wallet_usd,
+    user1_create_wallet_operation_rub,
+    user1_create_wallet_operation_usd,
+)
 from tests.moc_data.user_moc import CreateUserDataclassMoc
-from tests.moc_data.wallet_moc import CreateWalletDataclassMoc
+from tests.moc_data.wallet_moc import CreateWalletDataclassMoc, CreateFullWalletDataclassMoc, \
+    CreateOperationWalletDataclassMoc
 
 
 async def get_user_orm(user: CreateUserDataclassMoc, hash_argon2: HashArgon2) -> UserORM:
@@ -25,10 +36,16 @@ async def get_user_orm(user: CreateUserDataclassMoc, hash_argon2: HashArgon2) ->
     return UserORM(**user_dict)
 
 
-async def get_wallet_orm(user_id: int, wallet: CreateWalletDataclassMoc) -> WalletORM:
-    wallet_dict = wallet.model_dump()
-    wallet_dict["balance"] = wallet_dict.pop("initial_balance")
-    return WalletORM(**wallet_dict, user_id=user_id)
+async def get_wallet_orm(user_id: int, wallet: CreateFullWalletDataclassMoc) -> WalletORM:
+    return WalletORM(**wallet.model_dump(), user_id=user_id)
+
+
+async def get_full_wallet_orm(user_id: int, wallet: CreateWalletDataclassMoc) -> WalletORM:
+    return WalletORM(**wallet.model_dump(), user_id=user_id)
+
+
+async def get_operation_wallet_orm(operation: CreateOperationWalletDataclassMoc) -> OperationWalletORM:
+    return OperationWalletORM(**operation.model_dump())
 
 
 @pytest_asyncio.fixture(scope="session", autouse=True)
@@ -79,17 +96,17 @@ async def token_user(hash_argon2: HashArgon2) -> Token:
         user_orm = await get_user_orm(create_user1, hash_argon2)
         session.add(user_orm)
         await session.commit()
-    data_for_payload = {"id": user_orm.id, "user_name": user_orm.user_name}
-    return InstanceJWToken.encode_token(data_for_payload)
+    user_dto = UserWithoutPasswDTO(id=user_orm.id, user_name=user_orm.user_name)
+    return InstanceJWToken.encode_token(user_dto)
 
 
 @pytest_asyncio.fixture
 async def token_user_and_existing_wallets(token_user: Token) -> Token:
     payload = InstanceJWToken.decode_token(token_user)
-    user_id = payload.get("sub")
+    user_id = payload.sub
 
     async with AsyncSessionLocal() as session:
-        for wallet in (user1_create_wallet1, user1_create_wallet2):
+        for wallet in (user1_create_wallet_rub, user1_create_wallet_usd):
             wallet_orm = await get_wallet_orm(user_id, wallet)
             session.add(wallet_orm)
         await session.commit()
@@ -98,11 +115,42 @@ async def token_user_and_existing_wallets(token_user: Token) -> Token:
 
 
 @pytest_asyncio.fixture
-async def async_client_and_authorized_user(
+async def async_client_and_authorized_user_and_wallets(
         async_client: AsyncClient,
         token_user_and_existing_wallets: Token,
 ) -> AsyncGenerator[AsyncClient, None]:
     async_client.headers.update(
         {"Authorization": f"Bearer {token_user_and_existing_wallets}"}
+    )
+    yield async_client
+
+
+@pytest_asyncio.fixture
+async def token_user_and_existing_full_wallets(token_user: Token) -> Token:
+    payload = InstanceJWToken.decode_token(token_user)
+    user_id = payload.sub
+
+    async with AsyncSessionLocal() as session:
+        for wallet in (user1_create_full_wallet_rub, user1_create_full_wallet_usd):
+            wallet_orm = await get_full_wallet_orm(user_id, wallet)
+            session.add(wallet_orm)
+        await session.flush()
+
+        for operation in (user1_create_wallet_operation_rub, user1_create_wallet_operation_usd):
+            operation_orm = await get_operation_wallet_orm(operation)
+            session.add(operation_orm)
+
+        await session.commit()
+
+    return token_user
+
+
+@pytest_asyncio.fixture
+async def async_client_and_authorized_user_and_full_wallets(
+        async_client: AsyncClient,
+        token_user_and_existing_full_wallets: Token,
+) -> AsyncGenerator[AsyncClient, None]:
+    async_client.headers.update(
+        {"Authorization": f"Bearer {token_user_and_existing_full_wallets}"}
     )
     yield async_client

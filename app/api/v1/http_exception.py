@@ -2,7 +2,7 @@ from fastapi import HTTPException
 
 
 def user_not_found_404(user_id: int) -> HTTPException:
-    return HTTPException(status_code=404, detail=f"User '{user_id=}' not found")
+    return HTTPException(status_code=404, detail=f"User {user_id=} not found")
 
 
 def user_already_exists_400(user_name: str) -> HTTPException:

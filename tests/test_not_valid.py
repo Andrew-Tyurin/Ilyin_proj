@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import pytest
 from httpx import AsyncClient
 from pygments.lexers import data
@@ -29,19 +31,26 @@ from tests.moc_data.not_valid_moc_data import (
     non_existent_wallet_name,
     expected_without_wallet_name,
     not_valid_token,
-    create_wallet_balance_negative_100,
-    expected_create_wallet_balance_negative_100,
+    create_wallet_non_existent_currency,
+    expected_wallet_non_existent_currency,
     expected_wallet_exist,
     wallet_add_negative_amount,
     expected_wallet_add_negative_amount,
     wallet_add_expense_greater_balance,
-    expected_wallet_add_expense_greater_balance_chunk_1,
-    expected_wallet_add_expense_greater_balance_chunk_2
+    wallet_add_income_greater_balance,
+    expected_wallet_greater_or_less_balance,
+    transfer_not_valid_between_wallets,
+    expected_transfer_not_valid_between_wallets,
+    transfer_wallets_insufficient_funds,
+    expected_not_exist_wallet_id,
+    non_existent_order_by_data,
+    expected_non_existent_order_by_data,
 )
 from tests.moc_data.valid_moc_data import (
     create_user1,
-    user1_create_wallet1,
+    user1_create_wallet_rub,
 )
+from tests.substitute_functions import get_exchange_rate_replacement
 
 
 class TestNotValidUser:
@@ -150,30 +159,30 @@ class TestNotValidUser:
 
 class TestNotValidWallet:
     @pytest.mark.asyncio
-    async def test_get_wallet(self, async_client_and_authorized_user: AsyncClient):
-        response = await async_client_and_authorized_user.get(
-            f"/api/v1/my/wallets/balances?wallet_name={non_existent_wallet_name}"
+    async def test_get_wallet(self, async_client_and_authorized_user_and_wallets: AsyncClient):
+        response = await async_client_and_authorized_user_and_wallets.get(
+            f"/api/v1/my/wallets/one/{non_existent_wallet_name}"
         )
         data = response.json()
         assert response.status_code == status_code_404
         assert data["detail"] == expected_without_wallet_name
 
     @pytest.mark.asyncio
-    async def test_create_wallet_with_negative_balance(self, async_client: AsyncClient, token_user):
+    async def test_create_wallet_non_existent_currency(self, async_client: AsyncClient, token_user):
         response = await async_client.post(
             "/api/v1/my/wallets",
-            json=create_wallet_balance_negative_100,
+            json=create_wallet_non_existent_currency,
             headers={"Authorization": f"Bearer {token_user}"}
         )
         data = response.json()
-        assert data["detail"][0] == expected_create_wallet_balance_negative_100
+        assert data["detail"][0] == expected_wallet_non_existent_currency
         assert response.status_code == status_code_422
 
     @pytest.mark.asyncio
-    async def test_create_wallet_exist(self, async_client_and_authorized_user: AsyncClient):
-        response = await async_client_and_authorized_user.post(
+    async def test_create_wallet_exist(self, async_client_and_authorized_user_and_wallets: AsyncClient):
+        response = await async_client_and_authorized_user_and_wallets.post(
             "/api/v1/my/wallets",
-            json=user1_create_wallet1.model_dump(),
+            json=user1_create_wallet_rub.model_dump(),
         )
         data = response.json()
         assert response.status_code == status_code_400
@@ -182,8 +191,8 @@ class TestNotValidWallet:
 
 class TestNotValidOperationsWallet:
     @pytest.mark.asyncio
-    async def test_wallet_add_negative_income(self, async_client_and_authorized_user: AsyncClient):
-        response = await async_client_and_authorized_user.patch(
+    async def test_wallet_add_negative_income(self, async_client_and_authorized_user_and_wallets: AsyncClient):
+        response = await async_client_and_authorized_user_and_wallets.patch(
             "/api/v1/my/wallets/operations/income",
             json=wallet_add_negative_amount,
         )
@@ -192,8 +201,8 @@ class TestNotValidOperationsWallet:
         assert data["detail"][0] == expected_wallet_add_negative_amount
 
     @pytest.mark.asyncio
-    async def test_wallet_add_negative_expense(self, async_client_and_authorized_user: AsyncClient):
-        response = await async_client_and_authorized_user.patch(
+    async def test_wallet_add_negative_expense(self, async_client_and_authorized_user_and_wallets: AsyncClient):
+        response = await async_client_and_authorized_user_and_wallets.patch(
             "/api/v1/my/wallets/operations/expense",
             json=wallet_add_negative_amount,
         )
@@ -202,13 +211,61 @@ class TestNotValidOperationsWallet:
         assert data["detail"][0] == expected_wallet_add_negative_amount
 
     @pytest.mark.asyncio
-    async def test_wallet_expense_greater_than_balance(self, async_client_and_authorized_user: AsyncClient):
-        response = await async_client_and_authorized_user.patch(
+    async def test_wallet_expense_not_walid(self, async_client_and_authorized_user_and_wallets: AsyncClient):
+        response = await async_client_and_authorized_user_and_wallets.patch(
             "/api/v1/my/wallets/operations/expense",
             json=wallet_add_expense_greater_balance,
         )
         data = response.json()
-        data_detail = data["detail"]
         assert response.status_code == status_code_400
-        assert expected_wallet_add_expense_greater_balance_chunk_1 in data_detail
-        assert expected_wallet_add_expense_greater_balance_chunk_2 in data_detail
+        assert data['detail'] == expected_wallet_greater_or_less_balance
+
+    @pytest.mark.asyncio
+    async def test_wallet_income_not_walid(self, async_client_and_authorized_user_and_wallets: AsyncClient):
+        response = await async_client_and_authorized_user_and_wallets.patch(
+            "/api/v1/my/wallets/operations/income",
+            json=wallet_add_income_greater_balance,
+        )
+        data = response.json()
+        assert response.status_code == status_code_400
+        assert data['detail'] == expected_wallet_greater_or_less_balance
+
+    @pytest.mark.asyncio
+    async def test_transfer_wallets_insufficient_funds(self, async_client_and_authorized_user_and_wallets):
+        with patch("app.api.v1.dependencies.get_exchange_rate", new=get_exchange_rate_replacement):
+            response = await async_client_and_authorized_user_and_wallets.patch(
+                "/api/v1/my/wallets/operations/transfer",
+                json=transfer_wallets_insufficient_funds
+            )
+            data = response.json()
+            assert response.status_code == status_code_400
+            assert data["detail"] == expected_wallet_greater_or_less_balance
+
+    @pytest.mark.asyncio
+    async def test_transfer_from_identical_wallets(self, async_client_and_authorized_user_and_wallets):
+        with patch("app.api.v1.dependencies.get_exchange_rate", new=get_exchange_rate_replacement):
+            response = await async_client_and_authorized_user_and_wallets.patch(
+                "/api/v1/my/wallets/operations/transfer",
+                json=transfer_not_valid_between_wallets
+            )
+            data = response.json()
+            assert response.status_code == status_code_422
+            assert data["detail"][0] == expected_transfer_not_valid_between_wallets
+
+    @pytest.mark.asyncio
+    async def test_get_operation_non_existent_wallet(self, async_client_and_authorized_user_and_full_wallets: AsyncClient):
+        response = await async_client_and_authorized_user_and_full_wallets.get(
+            "/api/v1/my/wallets/operations/history?wallet_id=10"
+        )
+        data = response.json()
+        assert response.status_code == status_code_404
+        assert data['detail'] == expected_not_exist_wallet_id
+
+    @pytest.mark.asyncio
+    async def test_get_operation_non_existent_order_by(self, async_client_and_authorized_user_and_full_wallets: AsyncClient):
+        response = await async_client_and_authorized_user_and_full_wallets.get(
+            f"/api/v1/my/wallets/operations/history?order_by_data={non_existent_order_by_data}"
+        )
+        data = response.json()
+        assert response.status_code == status_code_422
+        assert data['detail'][0] == expected_non_existent_order_by_data
