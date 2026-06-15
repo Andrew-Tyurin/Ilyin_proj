@@ -160,8 +160,11 @@ class SqlAlchemyRepositoryOperationHistory(AbstractRepositoryOperationHistory):
             user_id: int,
             wallet_id: int | None,
             order_by_data: OperationOrderEnum,
-            limit: int | None
+            **kwargs
     ) -> list[OperationHistoryDTO]:
+        limit: int = kwargs.get('limit')
+        offset: int = kwargs.get('offset')
+
         stmt = (
             select(
                 OperationWalletORM.wallet_id,
@@ -175,6 +178,8 @@ class SqlAlchemyRepositoryOperationHistory(AbstractRepositoryOperationHistory):
             )
             .join(OperationWalletORM.wallet)
             .where(WalletORM.user_id == user_id)
+            .limit(limit)
+            .offset(offset)
         )
 
         if wallet_id:
@@ -187,9 +192,6 @@ class SqlAlchemyRepositoryOperationHistory(AbstractRepositoryOperationHistory):
                 raise WalletNotFoundError()
 
             stmt = stmt.where(OperationWalletORM.wallet_id == wallet_id)
-
-        if limit:
-            stmt = stmt.limit(limit)
 
         if order_by_data == OperationOrderEnum.DECREASE:
             stmt = stmt.order_by(OperationWalletORM.id.desc())

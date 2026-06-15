@@ -67,6 +67,13 @@ class ServiceOperation:
             user_id: int,
             wallet_id: int | None,
             order_by_data: OperationOrderEnum,
-            limit: int | None
+            limit: int,
+            offset: int
     ) -> list[OperationHistoryDTO]:
-        return await self._repo_operation_history.get_history(user_id, wallet_id, order_by_data, limit)
+        return await self._repo_operation_history.get_history(
+            user_id,
+            wallet_id,
+            order_by_data,
+            limit=limit,
+            offset=offset
+        )

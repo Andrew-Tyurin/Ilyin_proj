@@ -42,7 +42,6 @@ class AbstractRepositoryOperationHistory(ABC):
             self,
             user_id: int,
             wallet_id: int | None,
-            order_by_data: str,
-            limit: int | None
+            order_by_data: str
     ) -> list[OperationHistoryDTO]:
         pass

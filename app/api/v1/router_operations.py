@@ -92,11 +92,12 @@ async def get_operations_history(
         payload: PayloadAccessToken,
         wallet_id: Annotated[int | None, Query(ge=1)] = None,
         order_by_data: Annotated[OperationOrderEnum, Query()] = OperationOrderEnum.DECREASE,
-        limit: Annotated[int | None, Query(ge=1)] = None,
+        limit: Annotated[int | None, Query(ge=1, le=30)] = 10,
+        offset: Annotated[int | None, Query(ge=0)] = 0,
 ) -> list[ReadOperationsHistoryShema]:
     user_id = payload.sub
     try:
-        result = await service.get_operations_history(user_id, wallet_id, order_by_data, limit)
+        result = await service.get_operations_history(user_id, wallet_id, order_by_data, limit, offset)
     except WalletNotFoundError:
         raise wallet_not_found_id_404(wallet_id)
     return result
