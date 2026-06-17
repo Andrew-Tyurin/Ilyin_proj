@@ -6,9 +6,10 @@ from app.api.v1.dependencies import OperationServiceDep, PayloadAccessToken
 from app.api.v1.http_exception import wallet_not_found_id_404, wallet_not_valid_balance_400
 from app.api.v1.schemas import (
     CreateOperationSchema,
-    ReadOperationsHistoryShema,
+    ReadOperationsHistorySchema,
     CreateTransferWalletsShema,
-    ReadTransferBetweenWalletsShema
+    ReadTransferBetweenWalletsSchema,
+    DateFromDateToSchema
 )
 from app.custom_enum import OperationOrderEnum, OperationTypeEnum
 from app.domain.dto import WalletUpdateDTO
@@ -22,7 +23,7 @@ async def add_income(
         service: OperationServiceDep,
         operation: CreateOperationSchema,
         payload: PayloadAccessToken,
-) -> ReadOperationsHistoryShema:
+) -> ReadOperationsHistorySchema:
     user_id = payload.sub
     operation_income = Operation(
         wallet_id=operation.wallet_id,
@@ -45,7 +46,7 @@ async def add_expense(
         service: OperationServiceDep,
         operation: CreateOperationSchema,
         payload: PayloadAccessToken,
-) -> ReadOperationsHistoryShema:
+) -> ReadOperationsHistorySchema:
     user_id = payload.sub
     operation_expense = Operation(
         wallet_id=operation.wallet_id,
@@ -68,7 +69,7 @@ async def transfer_between_wallets(
         service: OperationServiceDep,
         payload: PayloadAccessToken,
         transfer_wallets: CreateTransferWalletsShema,
-) -> ReadTransferBetweenWalletsShema:
+) -> ReadTransferBetweenWalletsSchema:
     user_id = payload.sub
     amount = transfer_wallets.amount
     from_wallet_update = WalletUpdateDTO(id=transfer_wallets.from_wallet_id, user_id=user_id)
@@ -94,10 +95,21 @@ async def get_operations_history(
         order_by_data: Annotated[OperationOrderEnum, Query()] = OperationOrderEnum.DECREASE,
         limit: Annotated[int | None, Query(ge=1, le=30)] = 10,
         offset: Annotated[int | None, Query(ge=0)] = 0,
-) -> list[ReadOperationsHistoryShema]:
+) -> list[ReadOperationsHistorySchema]:
     user_id = payload.sub
     try:
         result = await service.get_operations_history(user_id, wallet_id, order_by_data, limit, offset)
     except WalletNotFoundError:
         raise wallet_not_found_id_404(wallet_id)
+    return result
+
+
+@router.get("/download")
+async def download_file_with_operations(
+        service: OperationServiceDep,
+        payload: PayloadAccessToken,
+        date_obj: Annotated[DateFromDateToSchema, Query()]
+) -> list[ReadOperationsHistorySchema]:
+    user_id = payload.sub
+    result = await service.crete_file_containing_operations(user_id, **date_obj.model_dump())
     return result

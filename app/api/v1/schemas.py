@@ -1,6 +1,7 @@
-from datetime import datetime
+from datetime import datetime, date
 from decimal import Decimal
 from typing import Annotated
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -124,13 +125,38 @@ class ReadOperationSchema(BaseModel):
     created_at: datetime
 
 
-class ReadOperationsHistoryShema(BaseModel):
+class ReadOperationsHistorySchema(BaseModel):
     wallet_id: int
     wallet_name: str
     currency: str
     operation: ReadOperationSchema
 
 
-class ReadTransferBetweenWalletsShema(BaseModel):
-    from_wallet: ReadOperationsHistoryShema
-    to_wallet: ReadOperationsHistoryShema
+class ReadTransferBetweenWalletsSchema(BaseModel):
+    from_wallet: ReadOperationsHistorySchema
+    to_wallet: ReadOperationsHistorySchema
+
+
+class DateFromDateToSchema(BaseModel):
+    date_from: date
+    date_to: date
+    timezone: str
+
+    @field_validator("timezone")
+    @classmethod
+    def validate_timezone(cls, value: str) -> str:
+        try:
+            ZoneInfo(value)
+        except ZoneInfoNotFoundError:
+            raise ValueError("Unknown timezone")
+
+        return value
+
+    @field_validator("date_to")
+    @classmethod
+    def validate_date(cls, date_to, info) -> date:
+        date_from = info.data.get("date_from")
+        if date_from > date_to:
+            raise ValueError("from date must be less to date")
+
+        return date_to

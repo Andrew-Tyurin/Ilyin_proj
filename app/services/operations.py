@@ -1,5 +1,7 @@
+from datetime import date, datetime, time
 from decimal import Decimal
 from typing import Callable, Awaitable
+from zoneinfo import ZoneInfo
 
 from app.contracts.repository_operations import AbstractRepositoryOperation, AbstractRepositoryOperationHistory
 from app.contracts.unit_of_work_interface import InterfaceUnitOfWork
@@ -77,3 +79,16 @@ class ServiceOperation:
             limit=limit,
             offset=offset
         )
+
+    async def crete_file_containing_operations(
+            self,
+            user_id: int,
+            date_from: date,
+            date_to: date,
+            timezone: str
+    ) -> list[OperationHistoryDTO]:
+        tz = ZoneInfo(timezone)
+        start = datetime.combine(date_from, time.min, tzinfo=tz)
+        end = datetime.combine(date_to, time.max, tzinfo=tz)
+        result = await self._repo_operation_history.look_history_by_date(user_id, start, end)
+        return result

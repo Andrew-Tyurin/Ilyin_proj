@@ -1,3 +1,4 @@
+from datetime import datetime
 from decimal import Decimal
 from typing import Callable, Awaitable
 
@@ -253,3 +254,47 @@ class SqlAlchemyRepositoryOperationHistory(AbstractRepositoryOperationHistory):
             response_operation_history.append(response_operation)
 
         return tuple(response_operation_history)
+
+    async def look_history_by_date(
+            self,
+            user_id: int,
+            date_from: datetime,
+            date_to: datetime
+    ) -> list[OperationHistoryDTO]:
+
+        stmt = (
+            select(
+                OperationWalletORM.wallet_id,
+                WalletORM.name,
+                WalletORM.currency,
+                OperationWalletORM.id,
+                OperationWalletORM.type,
+                OperationWalletORM.amount,
+                OperationWalletORM.description,
+                OperationWalletORM.created_at,
+            )
+            .join(OperationWalletORM.wallet)
+            .where(WalletORM.user_id == user_id)
+            .where(OperationWalletORM.created_at.between(date_from, date_to))
+        )
+
+        rows = (await self._session.execute(stmt)).all()
+
+        response_operation_history = []
+        for row in rows:
+            operation = OperationDTO(
+                id=row.id,
+                type=row.type,
+                amount=row.amount,
+                description=row.description,
+                created_at=row.created_at,
+            )
+            response_operation = OperationHistoryDTO(
+                wallet_id=row.wallet_id,
+                wallet_name=row.name,
+                currency=row.currency,
+                operation=operation,
+            )
+            response_operation_history.append(response_operation)
+
+        return response_operation_history

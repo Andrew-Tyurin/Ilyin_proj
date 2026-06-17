@@ -730,6 +730,7 @@ function initReportDates() {
 }
 
 async function loadReport() {
+    const token = localStorage.getItem('access_token');
     const dateFrom = document.getElementById('reportDateFrom').value;
     const dateTo = document.getElementById('reportDateTo').value;
 
@@ -738,102 +739,51 @@ async function loadReport() {
         return;
     }
 
-    if (dateFrom > dateTo) {
-        showError('Дата начала не может быть позже даты окончания');
-        return;
-    }
-
     try {
         const params = new URLSearchParams({
-            date_from: `${dateFrom}T00:00:00`,
-            date_to: `${dateTo}T23:59:59`
+            date_from: `${dateFrom}`,
+            date_to: `${dateTo}`,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
         });
 
-        const response = await fetch(`${API_BASE}/operations?${params}`, {
-            headers: { 'Authorization': `Bearer ${encodeURIComponent(currentUser)}` }
+        const response = await fetch(`${API_BASE}/my/wallets/operations/download?${params}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
         });
 
         if (response.ok) {
-            const rawReportOperations = await response.json();
-            // Нормализуем данные от бэкенда: приводим валюту к нижнему регистру, сумму к числу
-            const reportOperations = rawReportOperations.map(op => {
-                // Преобразуем сумму в число (обрабатываем строки, Decimal и другие типы)
-                let amount = 0;
-                if (typeof op.amount === 'number') {
-                    amount = op.amount;
-                } else if (typeof op.amount === 'string') {
-                    amount = parseFloat(op.amount) || 0;
-                } else if (op.amount != null) {
-                    amount = Number(op.amount) || 0;
-                }
-                
-                return {
-                    ...op,
-                    currency: String(op.currency || '').toLowerCase(),
-                    amount: amount
-                };
-            });
+            const data = await response.json();
             const tbody = document.getElementById('reportTable');
-            
-            if (reportOperations.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Нет операций за выбранный период</td></tr>';
-            } else {
-                tbody.innerHTML = reportOperations.reverse().map(t => {
-                    const wallet = wallets.find(w => w.id === t.wallet_id);
-                    const walletName = wallet ? wallet.name : 'Неизвестно';
-                    let typeClass, typeIcon, typeLabel;
-                    if (t.type === 'income') {
-                        typeClass = 'text-success';
-                        typeIcon = '➕';
-                        typeLabel = 'Доход';
-                    } else if (t.type === 'expense') {
-                        typeClass = 'text-danger';
-                        typeIcon = '➖';
-                        typeLabel = 'Расход';
-                    } else if (t.type === 'transfer') {
-                        typeClass = 'text-info';
-                        typeIcon = '🔄';
-                        typeLabel = 'Перевод';
-                    } else {
-                        typeClass = 'text-secondary';
-                        typeIcon = '❓';
-                        typeLabel = 'Неизвестно';
-                    }
-                    const date = new Date(t.created_at).toLocaleString('ru-RU', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    });
-                    
-                    const currencySymbols = {
-                        'rub': '₽',
-                        'usd': '$',
-                        'eur': '€'
-                    };
-                    // Гарантируем что сумма - число
-                    const amount = typeof t.amount === 'number' ? t.amount : (parseFloat(t.amount) || 0);
-                    const currency = String(t.currency || '').toLowerCase();
-                    const symbol = currencySymbols[currency] || currency.toUpperCase();
-                    
-                    return `
-                        <tr>
-                            <td>${date}</td>
-                            <td>${typeIcon} <span class="${typeClass}">${typeLabel}</span></td>
-                            <td>${walletName}</td>
-                            <td>${t.category || t.description || '-'}</td>
-                            <td class="text-end ${typeClass}"><strong>${amount.toFixed(2)} ${symbol}</strong></td>
-                        </tr>
-                    `;
-                }).join('');
+        
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Нет операций за выбранный период</td></tr>`;
+                return;
             }
-
-            document.getElementById('reportContent').style.display = 'block';
+            tbody.innerHTML = data.map(item => {
+                const date = new Date(item.operation.created_at).toLocaleString('ru-RU', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+                const amount = parseFloat(item.operation.amount) || 0;
+                const currency = item.currency || '';
+                return `
+                    <tr>
+                        <td>${date}</td>
+                        <td>${item.operation.type}</td>
+                        <td>${item.wallet_name}</td>
+                        <td>${item.wallet_id}</td>
+                        <td>${item.operation.description || ''}</td>
+                        <td><strong>${amount.toFixed(2)} ${currency}</strong></td>
+                    </tr>
+                `;
+            }).join('');
             showSuccess('Отчет сформирован!');
         } else {
-            const error = await response.json();
-            showError(error.detail || 'Ошибка загрузки отчета');
+            const errorMsg = await getErrorMessage(response);
+            showError(errorMsg);
         }
     } catch (e) {
         console.error('Ошибка загрузки отчета:', e);

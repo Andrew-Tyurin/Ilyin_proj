@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from datetime import datetime
 from decimal import Decimal
 
 from app.domain.dto import WalletUpdateDTO, OperationHistoryDTO
@@ -43,5 +44,14 @@ class AbstractRepositoryOperationHistory(ABC):
             user_id: int,
             wallet_id: int | None,
             order_by_data: str
+    ) -> list[OperationHistoryDTO]:
+        pass
+
+    @abstractmethod
+    async def look_history_by_date(
+            self,
+            user_id: int,
+            date_from: datetime,
+            date_to: datetime
     ) -> list[OperationHistoryDTO]:
         pass
