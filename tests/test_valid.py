@@ -1,3 +1,4 @@
+from datetime import date
 from unittest.mock import patch
 
 import pytest
@@ -233,3 +234,17 @@ class TestValidWalletOperations:
             create_at_expected = str(expected_data['operation'].pop('created_at', None))
             assert type(create_at_data) == type(create_at_expected)
             assert came_data == expected_data
+
+    @pytest.mark.asyncio
+    async def test_download_operations_pdf(self, async_client_and_authorized_user_and_full_wallets: AsyncClient):
+        date_from = date.today()
+        date_to = date.today()
+        timezone = "Europe/Moscow"
+        response = await async_client_and_authorized_user_and_full_wallets.get(
+            "/api/v1/my/wallets/operations/download",
+            params={"date_from": date_from, "date_to": date_to, "timezone": timezone}
+        )
+        assert response.status_code == 200
+        assert response.headers["content-type"] == "application/pdf"
+        assert "attachment" in response.headers["content-disposition"]
+        assert response.content.startswith(b"%PDF")

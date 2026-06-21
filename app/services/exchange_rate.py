@@ -31,7 +31,8 @@ async def get_exchange_rates_via_an_api(from_currency: CurrencyEnum, to_currency
 async def preparation_before_get_rate(from_currency: CurrencyEnum, to_currency: CurrencyEnum) -> Decimal | None:
     url_1 = f"https://latest.currency-api.pages.dev/v1/currencies/{from_currency}.json"
     url_2 = f"https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/{from_currency}.json"
-    for url in [url_1, url_2]:
+
+    for url in [url_2, url_1]:
         try:
             rate = await get_exchange_rates_via_an_api(from_currency, to_currency, url)
         except Exception:

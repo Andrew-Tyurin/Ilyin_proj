@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from app.domain.dto import TokenPayloadDTO
 from app.infrastructure.jwt_token_implementation import JWTokenImplementation
+from app.infrastructure.render_files_implementation import ReportLabOperationFilesPDF
 from app.infrastructure.repository_sa_operation import SqlAlchemyRepositoryOperation, \
     SqlAlchemyRepositoryOperationHistory
 from app.infrastructure.repository_sa_users import SqlAlchemyRepositoryUser
@@ -18,6 +19,7 @@ from app.services.users import ServiceUser
 from app.services.wallets import ServiceWallet
 
 InstanceJWToken = JWTokenImplementation()
+InstanceReportLabOperationFilesPDF = ReportLabOperationFilesPDF()
 Security = HTTPBearer(description=f"Need JWT for authorization.")
 Token: TypeAlias = str
 
@@ -81,6 +83,7 @@ def get_service_operation(session: AsyncSessionDep):
         repo_operation_history=repo_operation_history,
         exchange_func=get_exchange_rate,
         uow=uow,
+        render_files=InstanceReportLabOperationFilesPDF
     )
 
 

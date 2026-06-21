@@ -157,6 +157,6 @@ class DateFromDateToSchema(BaseModel):
     def validate_date(cls, date_to, info) -> date:
         date_from = info.data.get("date_from")
         if date_from > date_to:
-            raise ValueError("from date must be less to date")
+            raise ValueError("date_from must be less date_to")
 
         return date_to

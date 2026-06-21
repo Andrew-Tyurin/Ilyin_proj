@@ -751,36 +751,16 @@ async function loadReport() {
         });
 
         if (response.ok) {
-            const data = await response.json();
-            const tbody = document.getElementById('reportTable');
-        
-            if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Нет операций за выбранный период</td></tr>`;
-                return;
-            }
-            tbody.innerHTML = data.map(item => {
-                const date = new Date(item.operation.created_at).toLocaleString('ru-RU', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit'
-                });
-                const amount = parseFloat(item.operation.amount) || 0;
-                const currency = item.currency || '';
-                return `
-                    <tr>
-                        <td>${date}</td>
-                        <td>${item.operation.type}</td>
-                        <td>${item.wallet_name}</td>
-                        <td>${item.wallet_id}</td>
-                        <td>${item.operation.description || ''}</td>
-                        <td><strong>${amount.toFixed(2)} ${currency}</strong></td>
-                    </tr>
-                `;
-            }).join('');
-            showSuccess('Отчет сформирован!');
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'operations.pdf';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+            showSuccess('История транзакций скачана!');
         } else {
             const errorMsg = await getErrorMessage(response);
             showError(errorMsg);

@@ -276,6 +276,7 @@ class SqlAlchemyRepositoryOperationHistory(AbstractRepositoryOperationHistory):
             .join(OperationWalletORM.wallet)
             .where(WalletORM.user_id == user_id)
             .where(OperationWalletORM.created_at.between(date_from, date_to))
+            .order_by(OperationWalletORM.id.asc())
         )
 
         rows = (await self._session.execute(stmt)).all()

@@ -45,6 +45,9 @@ from tests.moc_data.not_valid_moc_data import (
     expected_not_exist_wallet_id,
     non_existent_order_by_data,
     expected_non_existent_order_by_data,
+    expected_create_pdf_more_365_days,
+    expected_create_pdf_not_valid_timezone,
+    expected_create_pdf_date_from_more_date_to,
 )
 from tests.moc_data.valid_moc_data import (
     create_user1,
@@ -269,3 +272,42 @@ class TestNotValidOperationsWallet:
         data = response.json()
         assert response.status_code == status_code_422
         assert data['detail'][0] == expected_non_existent_order_by_data
+
+    @pytest.mark.asyncio
+    async def test_download_pdf_range_date_more_365_days(
+            self,
+            async_client_and_authorized_user_and_full_wallets: AsyncClient
+    ):
+        response = await async_client_and_authorized_user_and_full_wallets.get(
+            "/api/v1/my/wallets/operations/download",
+            params={"date_from": "2025-01-01", "date_to": "2026-01-02", "timezone": "Europe/Moscow"},
+        )
+        data = response.json()
+        assert response.status_code == status_code_422
+        assert data['detail'] == expected_create_pdf_more_365_days
+
+    @pytest.mark.asyncio
+    async def test_download_pdf_not_valid_timezone(
+            self,
+            async_client_and_authorized_user_and_full_wallets: AsyncClient
+    ):
+        response = await async_client_and_authorized_user_and_full_wallets.get(
+            "/api/v1/my/wallets/operations/download",
+            params={"date_from": "2026-01-01", "date_to": "2026-01-01", "timezone": "Mars/Venera"},
+        )
+        data = response.json()
+        assert response.status_code == status_code_422
+        assert data['detail'][0]['msg'] == expected_create_pdf_not_valid_timezone
+
+    @pytest.mark.asyncio
+    async def test_download_pdf_date_from_more_date_to(
+            self,
+            async_client_and_authorized_user_and_full_wallets: AsyncClient
+    ):
+        response = await async_client_and_authorized_user_and_full_wallets.get(
+            "/api/v1/my/wallets/operations/download",
+            params={"date_from": "2026-01-01", "date_to": "2025-01-01", "timezone":"Europe/Moscow"},
+        )
+        data = response.json()
+        assert response.status_code == status_code_422
+        assert data['detail'][0]['msg'] == expected_create_pdf_date_from_more_date_to

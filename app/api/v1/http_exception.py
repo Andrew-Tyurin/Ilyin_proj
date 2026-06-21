@@ -30,3 +30,10 @@ def wallet_not_valid_balance_400(wallet_id: int) -> HTTPException:
         status_code=400,
         detail=f"Wallet {wallet_id=} balance cannot be less than zero and more 999_999_999_999.99"
     )
+
+
+def wide_date_range_422(current_days: str, max_days: str) -> HTTPException:
+    return HTTPException(
+        status_code=422,
+        detail=f"The range is too wide; you have {current_days} days, but it should be no more than {max_days} days."
+    )

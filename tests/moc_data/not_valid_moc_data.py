@@ -83,3 +83,7 @@ expected_not_exist_wallet_id = f"Wallet wallet_id={non_existent_wallet_id} does 
 
 non_existent_order_by_data = 'non-value'
 expected_non_existent_order_by_data = {'ctx': {'expected': "'increase' or 'decrease'"}, 'input': 'non-value', 'loc': ['query', 'order_by_data'], 'msg': "Input should be 'increase' or 'decrease'", 'type': 'enum'}
+
+expected_create_pdf_more_365_days = "The range is too wide; you have 366 days, but it should be no more than 365 days."
+expected_create_pdf_not_valid_timezone = "Value error, Unknown timezone"
+expected_create_pdf_date_from_more_date_to = "Value error, date_from must be less date_to"

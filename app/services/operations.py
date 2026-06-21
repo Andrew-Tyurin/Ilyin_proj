@@ -1,8 +1,10 @@
 from datetime import date, datetime, time
 from decimal import Decimal
+from io import BytesIO
 from typing import Callable, Awaitable
 from zoneinfo import ZoneInfo
 
+from app.contracts.render_files_interface import InterfaceFilesPDF
 from app.contracts.repository_operations import AbstractRepositoryOperation, AbstractRepositoryOperationHistory
 from app.contracts.unit_of_work_interface import InterfaceUnitOfWork
 from app.custom_enum import OperationOrderEnum, OperationTypeEnum
@@ -17,11 +19,13 @@ class ServiceOperation:
             repo_operation_history: AbstractRepositoryOperationHistory,
             exchange_func: Callable[[str, str], Awaitable[Decimal]],
             uow: InterfaceUnitOfWork,
+            render_files: InterfaceFilesPDF
     ):
         self._repo_operation = repo_operation
         self._repo_operation_history = repo_operation_history
         self._exchange_func = exchange_func
         self._uow = uow
+        self._render_files = render_files
 
     async def add_income(self, operation: Operation, wallet: WalletUpdateDTO) -> OperationHistoryDTO:
         wallet_updated = await self._repo_operation.addition(wallet, operation.amount)
@@ -83,12 +87,18 @@ class ServiceOperation:
     async def crete_file_containing_operations(
             self,
             user_id: int,
+            user_name: str,
             date_from: date,
             date_to: date,
             timezone: str
-    ) -> list[OperationHistoryDTO]:
+    ) -> BytesIO:
         tz = ZoneInfo(timezone)
         start = datetime.combine(date_from, time.min, tzinfo=tz)
         end = datetime.combine(date_to, time.max, tzinfo=tz)
         result = await self._repo_operation_history.look_history_by_date(user_id, start, end)
-        return result
+
+        for obj in result:
+            timezone_datetime = obj.operation.created_at.astimezone(tz)
+            obj.operation.created_at = timezone_datetime
+
+        return self._render_files.create(result, user_name, date_from, date_to, timezone)
