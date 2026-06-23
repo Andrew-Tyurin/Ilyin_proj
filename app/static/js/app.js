@@ -6,7 +6,7 @@ let operations = [];
 let currentOffset = 0;          // сколько записей пропущено
 let currentWalletId = null;     // фильтр по кошельку (число или null)
 let currentSort = 'decrease';   // текущая сортировка
-const PAGE_LIMIT = 5;          // количество записей на страницу (1-30)
+const PAGE_LIMIT = 10;          // количество записей на страницу (1-30)
 
 function showToast(title, message, isError = false) {
     const toastEl = document.getElementById('toastNotification');
@@ -242,7 +242,7 @@ async function loadTokenInfo() {
         if (response.ok) {
             const rawTokenInfo = await response.json();
             document.getElementById('TokenInfo').innerHTML = `
-            Авторизация для '${rawTokenInfo.user_name}' действует: ${rawTokenInfo.expires_time_life} секунд
+            Осталось: ${rawTokenInfo.expires_time_life} секунд!
             `;
 
         } else {
@@ -395,13 +395,14 @@ function renderWalletsTable() {
         'eur': '€'
     };
 
-    tbody.innerHTML = wallets.map(w => {
+    tbody.innerHTML = wallets.map((w, index)=> {
         // Гарантируем что баланс - число
         const balance = typeof w.balance === 'number' ? w.balance : (parseFloat(w.balance) || 0);
         const currency = String(w.currency || '').toLowerCase();
         const symbol = currencySymbols[currency] || currency.toUpperCase();
         return `
             <tr>
+                <td><strong>${index + 1})</strong></td>
                 <td><strong>${w.id}</strong></td>
                 <td><strong>${w.name}</strong></td>
                 <td><span class="badge bg-secondary">${currency.toUpperCase()}</span></td>
@@ -419,7 +420,7 @@ function renderOperationsTable() {
         return;
     }
     
-    tbody.innerHTML = operations.map(t => {
+    tbody.innerHTML = operations.map((t, index)=> {
         const wallet = wallets.find(w => w.id === t.wallet_id);
         const walletName = wallet ? wallet.name : 'Неизвестно';
         let typeClass, typeIcon, typeLabel;
@@ -457,9 +458,9 @@ function renderOperationsTable() {
         const amount = typeof t.operation.amount === 'number' ? t.operation.amount : (parseFloat(t.operation.amount) || 0);
         const currency = String(t.currency || '').toLowerCase();
         const wallet_id = String(t.wallet_id || '').toLowerCase();
-
         return `
             <tr>
+                <td>${currentOffset + index + 1})</td>
                 <td>${date}</td>
                 <td>${typeIcon} <span class="${typeClass}">${typeLabel}</span></td>
                 <td>${walletName}</td>

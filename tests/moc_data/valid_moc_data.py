@@ -40,12 +40,7 @@ class User2:
     access_token: str = "access_token_user_2"
 
 
-class BaseWallet:
-    message_income: str = "Income added"
-    message_expense: str = "Expense added"
-
-
-class Wallet1User1(BaseWallet):
+class Wallet1User1:
     id: int = 1
     name: str = "SBER"
     currency: CurrencyEnum = CurrencyEnum.RUB
@@ -59,7 +54,7 @@ class Wallet1User1(BaseWallet):
     balance_transfer: Decimal = Decimal("400.00")
 
 
-class Wallet2User1(BaseWallet):
+class Wallet2User1:
     id: int = 2
     name: str = "USA"
     currency: CurrencyEnum = CurrencyEnum.USD

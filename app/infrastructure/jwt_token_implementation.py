@@ -5,15 +5,15 @@ import jwt
 from fastapi import HTTPException
 from jwt.exceptions import InvalidTokenError
 
-from app.config_env import secret_key_env
+from app.config_app import JWTokenSettings
 from app.contracts.token_interface import InterfaceToken
 from app.domain.dto import UserWithoutPasswDTO, TokenPayloadDTO, UserLifetimeTokenDTO
 
 
 class JWTokenImplementation(InterfaceToken):
-    _secret_key: str = secret_key_env.SECRET_KEY
-    _access_token_expire_minutes: int = 15
-    _algorithm: str = "HS256"
+    _secret_key: str = JWTokenSettings.secret_key
+    _access_token_expire_minutes: int = JWTokenSettings.time_minutes
+    _algorithm: str = JWTokenSettings.algorithm
 
     @property
     def raise_token_exception(self) -> HTTPException:

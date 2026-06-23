@@ -15,6 +15,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.custom_enum import CurrencyEnum, OperationTypeEnum
+from app.domain.rules import UserRules, WalletRules, WalletOperationRules
 from app.infrastructure.sqlalchemy_db import Base
 
 
@@ -22,8 +23,13 @@ class UserORM(Base):
     __tablename__ = "user"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    user_name: Mapped[str] = mapped_column(String(80), nullable=False, unique=True, index=True)
-    password: Mapped[str] = mapped_column(String(120), nullable=False)
+    user_name: Mapped[str] = mapped_column(
+        String(UserRules.user_name_max_length),
+        nullable=False,
+        unique=True,
+        index=True
+    )
+    password: Mapped[str] = mapped_column(String(UserRules.password_max_length), nullable=False)
     wallets: Mapped[list["WalletORM"]] = relationship(back_populates="user", passive_deletes=True)
 
 
@@ -31,8 +37,12 @@ class WalletORM(Base):
     __tablename__ = "wallet"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    name: Mapped[str] = mapped_column(String(80), nullable=False)
-    balance: Mapped[Decimal] = mapped_column(DECIMAL(14, 2), nullable=False, default=Decimal("0.00"))
+    name: Mapped[str] = mapped_column(String(WalletRules.name_max_length), nullable=False)
+    balance: Mapped[Decimal] = mapped_column(
+        DECIMAL(WalletRules.balance_length, WalletRules.balance_length_after_point),
+        nullable=False,
+        default=WalletRules.balance_min
+    )
     user_id: Mapped[int] = mapped_column(
         ForeignKey("user.id", ondelete="CASCADE"),
         nullable=False,
@@ -45,7 +55,7 @@ class WalletORM(Base):
     operations: Mapped["OperationWalletORM"] = relationship(back_populates="wallet", passive_deletes=True)
 
     __table_args__ = (
-        CheckConstraint(f"balance >= 0.00", name="wallet_balance"),
+        CheckConstraint(f"balance >= {WalletRules.balance_min}", name="wallet_balance"),
         UniqueConstraint("name", "user_id", name="unique_wallet_user_id"),
     )
 
@@ -59,8 +69,14 @@ class OperationWalletORM(Base):
         SQLEnum(OperationTypeEnum, values_callable=lambda enum: [e.value for e in enum]),
         nullable=False
     )
-    amount: Mapped[Decimal] = mapped_column(DECIMAL(14, 2), nullable=False)
-    description: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    amount: Mapped[Decimal] = mapped_column(
+        DECIMAL(WalletOperationRules.amount_length, WalletOperationRules.amount_length_after_point),
+        nullable=False
+    )
+    description: Mapped[str | None] = mapped_column(
+        String(WalletOperationRules.description_max_length),
+        nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -69,5 +85,5 @@ class OperationWalletORM(Base):
     wallet: Mapped[WalletORM] = relationship(back_populates="operations")
 
     __table_args__ = (
-        CheckConstraint(f"amount >= 0.00", name="operation_amount"),
+        CheckConstraint(f"amount >= {WalletOperationRules.amount_min}", name="operation_amount"),
     )

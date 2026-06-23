@@ -89,19 +89,24 @@
             <div class="card mb-4">
                 <div class="card-body">
                     <h4 class="card-title">💳 Мои кошельки</h4>
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>id</th>
-                                    <th>Название</th>
-                                    <th>Валюта</th>
-                                    <th class="text-end">Баланс</th>
-                                </tr>
-                            </thead>
-                            <tbody id="walletsTable"></tbody>
-                        </table>
+
+                    <div class="overflow-auto" style="height: 250px">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>№</th>
+                                        <th>id</th>
+                                        <th>Название</th>
+                                        <th>Валюта</th>
+                                        <th class="text-end">Баланс</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="walletsTable"></tbody>
+                            </table>
+                        </div>
                     </div>
+
                 </div>
             </div>
 
@@ -110,21 +115,15 @@
                 <div class="card-body">
                     <h4 class="card-title">📋 История операций</h4>
 
-                    <div class="d-flex align-items-center">
+                    <div class="d-flex flex-column flex-sm-row align-self-center gap-2">
                         <button onclick="loadOperations()" class="btn btn-success">Искать</button>
-                        <div class="">
-                            <label for="sortSelect" class="form-label"></label>
-                            <select id="sortSelect" class="form-select" style="width: auto; display: inline-block; margin-left: 10px;">
-                                <option value="decrease">Сначала новые</option>
-                                <option value="increase">Сначала старые</option>
-                            </select>
-                        </div>
-                        <div class="">
-                            <label for="walletSelect" class="form-label"></label>
-                            <select id="walletSelect" class="form-select" style="width: auto; display: inline-block; margin-left: 10px;">
-                                 <option value="">Все кошельки</option>
-                            </select>
-                        </div>
+                        <select id="sortSelect" class="form-select" style="width: auto;">
+                            <option value="decrease">Сначала новые</option>
+                            <option value="increase">Сначала старые</option>
+                        </select>
+                        <select id="walletSelect" class="form-select" style="width: auto;">
+                             <option value="">Все кошельки</option>
+                        </select>
                     </div>
 
                     <hr>
@@ -138,6 +137,7 @@
                         <table class="table table-hover">
                             <thead>
                                 <tr>
+                                    <th>№</th>
                                     <th>Дата</th>
                                     <th>Тип</th>
                                     <th>Кошелек</th>

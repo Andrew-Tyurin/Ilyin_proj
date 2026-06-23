@@ -45,9 +45,14 @@ from tests.moc_data.not_valid_moc_data import (
     expected_not_exist_wallet_id,
     non_existent_order_by_data,
     expected_non_existent_order_by_data,
-    expected_create_pdf_more_365_days,
+    expected_create_pdf_more_n_days,
     expected_create_pdf_not_valid_timezone,
     expected_create_pdf_date_from_more_date_to,
+    params_create_pdf_more_n_days,
+    params_create_pdf_not_valid_timezone,
+    params_create_pdf_date_from_more_date_to,
+    wallet_add_income_zero_balance,
+    expected_wallet_add_zero_amount
 )
 from tests.moc_data.valid_moc_data import (
     create_user1,
@@ -204,6 +209,16 @@ class TestNotValidOperationsWallet:
         assert data["detail"][0] == expected_wallet_add_negative_amount
 
     @pytest.mark.asyncio
+    async def test_wallet_add_zero_income(self, async_client_and_authorized_user_and_wallets: AsyncClient):
+        response = await async_client_and_authorized_user_and_wallets.patch(
+            "/api/v1/my/wallets/operations/income",
+            json=wallet_add_income_zero_balance,
+        )
+        data = response.json()
+        assert response.status_code == status_code_422
+        assert data["detail"][0] == expected_wallet_add_zero_amount
+
+    @pytest.mark.asyncio
     async def test_wallet_add_negative_expense(self, async_client_and_authorized_user_and_wallets: AsyncClient):
         response = await async_client_and_authorized_user_and_wallets.patch(
             "/api/v1/my/wallets/operations/expense",
@@ -274,17 +289,17 @@ class TestNotValidOperationsWallet:
         assert data['detail'][0] == expected_non_existent_order_by_data
 
     @pytest.mark.asyncio
-    async def test_download_pdf_range_date_more_365_days(
+    async def test_download_pdf_range_date_more_n_days(
             self,
             async_client_and_authorized_user_and_full_wallets: AsyncClient
     ):
         response = await async_client_and_authorized_user_and_full_wallets.get(
             "/api/v1/my/wallets/operations/download",
-            params={"date_from": "2025-01-01", "date_to": "2026-01-02", "timezone": "Europe/Moscow"},
+            params=params_create_pdf_more_n_days,
         )
         data = response.json()
         assert response.status_code == status_code_422
-        assert data['detail'] == expected_create_pdf_more_365_days
+        assert data['detail'][0]['msg'] == expected_create_pdf_more_n_days
 
     @pytest.mark.asyncio
     async def test_download_pdf_not_valid_timezone(
@@ -293,7 +308,7 @@ class TestNotValidOperationsWallet:
     ):
         response = await async_client_and_authorized_user_and_full_wallets.get(
             "/api/v1/my/wallets/operations/download",
-            params={"date_from": "2026-01-01", "date_to": "2026-01-01", "timezone": "Mars/Venera"},
+            params=params_create_pdf_not_valid_timezone,
         )
         data = response.json()
         assert response.status_code == status_code_422
@@ -306,7 +321,7 @@ class TestNotValidOperationsWallet:
     ):
         response = await async_client_and_authorized_user_and_full_wallets.get(
             "/api/v1/my/wallets/operations/download",
-            params={"date_from": "2026-01-01", "date_to": "2025-01-01", "timezone":"Europe/Moscow"},
+            params=params_create_pdf_date_from_more_date_to,
         )
         data = response.json()
         assert response.status_code == status_code_422

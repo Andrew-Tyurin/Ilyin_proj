@@ -4,7 +4,7 @@ from fastapi import APIRouter, Query
 from fastapi.responses import StreamingResponse
 
 from app.api.v1.dependencies import OperationServiceDep, PayloadAccessToken
-from app.api.v1.http_exception import wallet_not_found_id_404, wallet_not_valid_balance_400, wide_date_range_422
+from app.api.v1.http_exception import wallet_not_found_id_404, wallet_not_valid_balance_400
 from app.api.v1.schemas import (
     CreateOperationSchema,
     ReadOperationsHistorySchema,
@@ -14,7 +14,7 @@ from app.api.v1.schemas import (
 )
 from app.custom_enum import OperationOrderEnum, OperationTypeEnum
 from app.domain.dto import WalletUpdateDTO
-from app.domain.entities import Operation, WalletNotFoundError, WalletUpdateError, NoMoreThanDaysError
+from app.domain.entities import Operation, WalletNotFoundError, WalletUpdateError
 
 router = APIRouter()
 
@@ -109,7 +109,7 @@ async def get_operations_history(
 async def download_file_with_operations(
         service: OperationServiceDep,
         payload: PayloadAccessToken,
-        date_obj: Annotated[DateFromDateToSchema, Query()]
+        dates_and_timezone: Annotated[DateFromDateToSchema, Query()]
 ) -> StreamingResponse:
     """
     # image:
@@ -117,18 +117,9 @@ async def download_file_with_operations(
     - ### from_to: 2026-02-01
     - ### timezone: Europe/Moscow
     """
-    max_days = 365
-    current_days = (date_obj.date_to - date_obj.date_from).days
-
-    try:
-        if current_days > max_days:
-            raise NoMoreThanDaysError
-    except NoMoreThanDaysError:
-        raise wide_date_range_422(current_days, max_days)
-
     user_id = payload.sub
     user_name = payload.user_name
-    result = await service.crete_file_containing_operations(user_id, user_name, **date_obj.model_dump())
+    result = await service.crete_file_containing_operations(user_id, user_name, **dates_and_timezone.model_dump())
     return StreamingResponse(
         result,
         media_type="application/pdf",

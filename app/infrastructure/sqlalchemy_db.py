@@ -3,25 +3,25 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.pool import NullPool
 
-from app.config_env import psql_env, APP_ENV
+from app.config_app import SaDbSettings
 
-if APP_ENV == 'prod':
+if SaDbSettings.app_env == 'prod':
     async_engine = create_async_engine(
-        url=psql_env.ASYNC_DB_URL_STR,
-        pool_size=4,
-        max_overflow=4,
-        echo=True,
+        url=SaDbSettings.database_url,
+        pool_size=SaDbSettings.pool_size,
+        max_overflow=SaDbSettings.max_overflow,
+        echo=SaDbSettings.echo,
     )
 
-elif APP_ENV == 'test':
+elif SaDbSettings.app_env == 'test':
     async_engine = create_async_engine(
-        url=psql_env.ASYNC_DB_URL_STR,
+        url=SaDbSettings.database_url,
         poolclass=NullPool,
         echo=False,
     )
 
 else:
-    raise ValueError(f"Invalid APP_ENV: {APP_ENV}")
+    raise ValueError(f"Invalid APP_ENV: {SaDbSettings.app_env}")
 
 AsyncSessionLocal = async_sessionmaker(
     bind=async_engine,

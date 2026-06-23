@@ -24,7 +24,7 @@ class PsqlEnv(SettingsMainEnv):
     ASYNC_DB_URL: PostgresDsn | None = None
 
     @property
-    def ASYNC_DB_URL_STR(self) -> str:
+    def async_db_url_str(self) -> str:
         return str(self.ASYNC_DB_URL)
 
 

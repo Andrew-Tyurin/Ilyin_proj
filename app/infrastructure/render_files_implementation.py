@@ -8,6 +8,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 
 from app.contracts.render_files_interface import InterfaceFilesPDF
+from app.custom_enum import CurrencyEnum, OperationTypeEnum
 from app.domain.dto import OperationHistoryDTO
 
 pdfmetrics.registerFont(
@@ -20,12 +21,12 @@ pdfmetrics.registerFont(
 
 class ReportLabOperationFilesPDF(InterfaceFilesPDF):
     operation_name_ru: dict[str, str] = {
-        'income': 'Доход',
-        'expense': 'Расход',
-        'transfer_income': 'Перевод, доход',
-        'transfer_expense': 'Перевод, расход'
+        OperationTypeEnum.INCOME: 'Доход',
+        OperationTypeEnum.EXPENSE: 'Расход',
+        OperationTypeEnum.TRANSFER_INCOME: 'Перевод, доход',
+        OperationTypeEnum.TRANSFER_EXPENSE: 'Перевод, расход'
     }
-    currency_symbols: dict[str, str] = {"rub": '₽', "usd": '$', "eur": '€'}
+    currency_symbols: dict[str, str] = {CurrencyEnum.RUB: '₽', CurrencyEnum.USD: '$', CurrencyEnum.EUR: '€'}
     bg_color_currency: dict[str, Color] = {'income': lightgreen, 'expense': lightcoral}
 
     def create(
@@ -41,13 +42,13 @@ class ReportLabOperationFilesPDF(InterfaceFilesPDF):
             ('№', '№ операции', 'Дата операции', '№ кошелька', 'Имя кошелька', 'Тип операции', 'Сумма'),
         ]
         list_style = [
-            ('FONT', (0, 0), (-1, -1), 'DejaVu', 9, 9),
+            ('FONT', (0, 0), (-1, 0), 'DejaVu', 9, 9),
             ('FONT', (0, 1), (-1, -1), 'DejaVu', 8, 8),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ('INNERGRID', (0, 0), (-1, -1), 0.25, black),
             ('BOX', (0, 0), (-1, -1), 0.25, black),
-            ('BACKGROUND', (0, 0), (6, 0), gray),
-            ('TEXTCOLOR', (0, 0), (6, 0), white)
+            ('BACKGROUND', (0, 0), (-1, 0), gray),
+            ('TEXTCOLOR', (0, 0), (-1, 0), white)
         ]
 
         for index, operation in enumerate(operations, 1):
