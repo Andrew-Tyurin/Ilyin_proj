@@ -5,7 +5,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import BaseModel, Field, field_validator
 
-from app.custom_enum import CurrencyEnum
+from app.custom_enum import CurrencyEnum, ExchangeRateProviderEnum
 from app.domain.rules import UserRules, WalletRules, WalletOperationRules
 
 AmountOperationDecimal = Annotated[Decimal, Field(
@@ -168,6 +168,7 @@ class ReadWalletsTotalBalanceSchema(BaseModel):
     user_id: int
     currency: CurrencyEnum
     total_balance: ImageDecimal
+    provider: ExchangeRateProviderEnum
 
 
 class ReadOperationSchema(BaseModel):
@@ -188,3 +189,4 @@ class ReadOperationsHistorySchema(BaseModel):
 class ReadTransferBetweenWalletsSchema(BaseModel):
     from_wallet: ReadOperationsHistorySchema
     to_wallet: ReadOperationsHistorySchema
+    provider:  ExchangeRateProviderEnum

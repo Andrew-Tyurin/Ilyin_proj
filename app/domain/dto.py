@@ -36,6 +36,7 @@ class WalletsTotalBalanceDTO:
     user_id: int
     currency: str
     total_balance: Decimal
+    provider: str
 
 
 @dataclass

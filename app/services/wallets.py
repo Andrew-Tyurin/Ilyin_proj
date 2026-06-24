@@ -3,7 +3,7 @@ from typing import Callable, Awaitable
 
 from app.contracts.repository_wallets import AbstractRepositoryWallet
 from app.contracts.unit_of_work_interface import InterfaceUnitOfWork
-from app.custom_enum import CurrencyEnum
+from app.custom_enum import CurrencyEnum, ExchangeRateProviderEnum
 from app.domain.dto import WalletsTotalBalanceDTO, WalletDTO
 from app.domain.entities import Wallet
 
@@ -12,7 +12,9 @@ class ServiceWallet:
     def __init__(
             self,
             repo: AbstractRepositoryWallet,
-            exchange_func: Callable[[str, str], Awaitable[Decimal]],
+            exchange_func: Callable[
+                [Decimal, CurrencyEnum, CurrencyEnum], Awaitable[tuple[Decimal, ExchangeRateProviderEnum]]
+            ],
             uow: InterfaceUnitOfWork,
     ):
         self._repo = repo

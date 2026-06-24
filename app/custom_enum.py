@@ -17,3 +17,9 @@ class OperationTypeEnum(StrEnum):
 class OperationOrderEnum(StrEnum):
     INCREASE = "increase"
     DECREASE = "decrease"
+
+
+class ExchangeRateProviderEnum(StrEnum):
+    API = "api"
+    APP = "app"
+    NO_PROVIDER = "no_provider"

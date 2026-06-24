@@ -385,7 +385,7 @@ function renderWalletsTable() {
     const tbody = document.getElementById('walletsTable');
     
     if (wallets.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">У вас пока нет кошельков</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">У вас пока нет кошельков</td></tr>';
         return;
     }
 
@@ -416,7 +416,7 @@ function renderOperationsTable() {
     const tbody = document.getElementById('transactionsTable');
     
     if (operations.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Нет транзакций</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Нет транзакций</td></tr>';
         return;
     }
     
@@ -487,13 +487,24 @@ async function updateTotalBalance() {
             method: 'GET',
             headers: {'Authorization': `Bearer ${token}`}
         });
+
         if (response.ok) {
+            const providerMap = {
+                'api': { class: 'bg-success text-light', label: '👌 Данные точны!' },
+                'app': { class: 'bg-warning', label: '❗❗❗ Данные не точны ❗❗❗' },
+                'no_provider': { class: 'bg-primary text-light', label: '😂 Ваш общий баланс пуст' }
+            };
+
             const data = await response.json();
             const total = parseFloat(data.total_balance) || 0;
             const currencySymbol = getCurrencySymbol(data.currency);
+            const providerInfo = providerMap[data.provider] || providerMap['no_provider'];
             document.getElementById('totalBalance').innerHTML = `
                 ${total.toFixed(2)} ${currencySymbol}
                 <div class="fs-6 text-muted mt-2">Общий баланс по всем кошелькам</div>
+            `;
+            document.getElementById("totalBalanceProvider").innerHTML = `
+                <b><span class="${providerInfo.class} p-2 rounded">${providerInfo.label}</span></b>    
             `;
         } else {
             const errorMsg = await getErrorMessage(response);
@@ -683,6 +694,12 @@ async function transfer() {
     const to_wallet_id = parseInt(document.getElementById('transferTo').value);
     const amount = parseFloat(document.getElementById('transferAmount').value);
 
+    const providerMap = {
+        'api': 'Данные точны!',
+        'app': 'Данные НЕ точны!',
+        'no_provider': 'Что-то пошло не так!'
+    };
+
     try {
         const response = await fetch(`${API_BASE}/my/wallets/operations/transfer`, {
             method: 'PATCH',
@@ -704,9 +721,10 @@ async function transfer() {
             const walletNameTo = data.to_wallet.wallet_name
             const currencyDataTo = getCurrencySymbol(data.to_wallet.currency)
 
+            const providerInfo = providerMap[data.provider] || providerMap['no_provider'];
             showSuccess(
                 `Перевод с: ${walletNameFrom} на: ${walletNameTo};
-                ${amountDataFrom} ${currencyDataFrom} -> ${amountDataTo} ${currencyDataTo}`
+                ${amountDataFrom} ${currencyDataFrom} -> ${amountDataTo} ${currencyDataTo}; ${providerInfo}`
             );
             closeModal('transferModal');
             resetToDefaultAndRefresh();

@@ -58,7 +58,7 @@ from tests.moc_data.valid_moc_data import (
     create_user1,
     user1_create_wallet_rub,
 )
-from tests.substitute_functions import get_exchange_rate_replacement
+from tests.substitute_functions import convert_using_exchange_rate
 
 
 class TestNotValidUser:
@@ -250,7 +250,7 @@ class TestNotValidOperationsWallet:
 
     @pytest.mark.asyncio
     async def test_transfer_wallets_insufficient_funds(self, async_client_and_authorized_user_and_wallets):
-        with patch("app.api.v1.dependencies.get_exchange_rate", new=get_exchange_rate_replacement):
+        with patch("app.api.v1.dependencies.convert_using_exchange_rate", new=convert_using_exchange_rate):
             response = await async_client_and_authorized_user_and_wallets.patch(
                 "/api/v1/my/wallets/operations/transfer",
                 json=transfer_wallets_insufficient_funds
@@ -261,7 +261,7 @@ class TestNotValidOperationsWallet:
 
     @pytest.mark.asyncio
     async def test_transfer_from_identical_wallets(self, async_client_and_authorized_user_and_wallets):
-        with patch("app.api.v1.dependencies.get_exchange_rate", new=get_exchange_rate_replacement):
+        with patch("app.api.v1.dependencies.convert_using_exchange_rate", new=convert_using_exchange_rate):
             response = await async_client_and_authorized_user_and_wallets.patch(
                 "/api/v1/my/wallets/operations/transfer",
                 json=transfer_not_valid_between_wallets

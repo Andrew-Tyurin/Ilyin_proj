@@ -28,8 +28,9 @@ from tests.moc_data.valid_moc_data import (
     user1_result_transfer_between_to_wallet1,
     user1_result_read_operation_income_wallet1,
     user1_result_read_operation_income_wallet2,
+    User1,
 )
-from tests.substitute_functions import get_exchange_rate_replacement
+from tests.substitute_functions import convert_using_exchange_rate
 
 
 class TestValidUser:
@@ -114,7 +115,7 @@ class TestValidWallet:
 
     @pytest.mark.asyncio
     async def test_read_wallets_balance(self, async_client_and_authorized_user_and_wallets: AsyncClient):
-        with patch("app.api.v1.dependencies.get_exchange_rate", new=get_exchange_rate_replacement):
+        with patch("app.api.v1.dependencies.convert_using_exchange_rate", new=convert_using_exchange_rate):
             response = await async_client_and_authorized_user_and_wallets.get("/api/v1/my/wallets/balances")
             data = response.json()
             assert data == user1_read_balance_zero_wallets.model_dump()
@@ -122,7 +123,7 @@ class TestValidWallet:
 
     @pytest.mark.asyncio
     async def test_read_wallets_balance_not_zero(self, async_client_and_authorized_user_and_full_wallets: AsyncClient):
-        with patch("app.api.v1.dependencies.get_exchange_rate", new=get_exchange_rate_replacement):
+        with patch("app.api.v1.dependencies.convert_using_exchange_rate", new=convert_using_exchange_rate):
             response = await async_client_and_authorized_user_and_full_wallets.get("/api/v1/my/wallets/balances")
             data = response.json()
             assert data == user1_read_balance_not_zero_wallets.model_dump()
@@ -167,7 +168,7 @@ class TestValidWalletOperations:
 
     @pytest.mark.asyncio
     async def test_transfer_between_wallets(self, async_client_and_authorized_user_and_full_wallets: AsyncClient):
-        with patch("app.api.v1.dependencies.get_exchange_rate", new=get_exchange_rate_replacement):
+        with patch("app.api.v1.dependencies.convert_using_exchange_rate", new=convert_using_exchange_rate):
             response = await async_client_and_authorized_user_and_full_wallets.patch(
                 "/api/v1/my/wallets/operations/transfer",
                 json=user1_transfer_between.model_dump()
@@ -176,8 +177,13 @@ class TestValidWalletOperations:
             expected_result = {
                 "from_wallet": user1_result_transfer_between_from_wallet2.model_dump(),
                 "to_wallet": user1_result_transfer_between_to_wallet1.model_dump(),
+                "provider": User1.provider.value
             }
+            data_provider = data.pop("provider", True)
+            expected_provider = expected_result.pop("provider", False)
+            assert data_provider == expected_provider
             assert response.status_code == status_code_200
+
             for came_data, expected_data in zip(data.values(), expected_result.values()):
                 create_at_data = came_data['operation'].pop('created_at', None)
                 create_at_expected = str(expected_data['operation'].pop('created_at', None))

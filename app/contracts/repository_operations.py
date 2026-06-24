@@ -21,7 +21,7 @@ class AbstractRepositoryOperation(ABC):
             from_wallet: WalletUpdateDTO,
             to_wallet: WalletUpdateDTO,
             amount: Decimal, **kwargs
-    ) -> tuple[Wallet, Wallet]:
+    ) -> tuple[Wallet, Wallet, str]:
         pass
 
 

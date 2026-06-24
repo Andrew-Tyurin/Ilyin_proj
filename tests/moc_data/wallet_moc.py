@@ -2,7 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import TypeAlias
 
-from app.custom_enum import CurrencyEnum, OperationTypeEnum
+from app.custom_enum import CurrencyEnum, OperationTypeEnum, ExchangeRateProviderEnum
 from tests.moc_data.base_moc import BaseDataclassMoc
 
 DecimalStr: TypeAlias = str
@@ -36,6 +36,7 @@ class ReadSumBalanceWalletsDataclassMoc(BaseDataclassMoc):
     user_id: int
     currency: CurrencyEnum
     total_balance: DecimalStr
+    provider: ExchangeRateProviderEnum
 
 
 class UpdateWalletDataclassMoc(BaseDataclassMoc):

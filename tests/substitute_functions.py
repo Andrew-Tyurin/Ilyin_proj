@@ -1,20 +1,29 @@
 from decimal import Decimal
 
-from app.custom_enum import CurrencyEnum
+from app.custom_enum import CurrencyEnum, ExchangeRateProviderEnum
 
-TEST_EXCHANGE_RATE_DICT: dict[tuple[str, str], Decimal] = {
-    (CurrencyEnum.USD, CurrencyEnum.RUB): Decimal("75.00"),
-    (CurrencyEnum.USD, CurrencyEnum.EUR): Decimal("0.85"),
-    (CurrencyEnum.EUR, CurrencyEnum.RUB): Decimal("85.00"),
-    (CurrencyEnum.EUR, CurrencyEnum.USD): Decimal("1.15"),
-    (CurrencyEnum.RUB, CurrencyEnum.USD): Decimal("0.0134"),
-    (CurrencyEnum.RUB, CurrencyEnum.EUR): Decimal("0.0118"),
+TEST_EXCHANGE_RATE_DICT:dict[tuple[CurrencyEnum, CurrencyEnum], tuple[Decimal, ExchangeRateProviderEnum]] = {
+    (CurrencyEnum.USD, CurrencyEnum.RUB): (Decimal("75.00"), ExchangeRateProviderEnum.APP),
+    (CurrencyEnum.USD, CurrencyEnum.EUR): (Decimal("0.85"), ExchangeRateProviderEnum.APP),
+    (CurrencyEnum.EUR, CurrencyEnum.RUB): (Decimal("85.00"), ExchangeRateProviderEnum.APP),
+    (CurrencyEnum.EUR, CurrencyEnum.USD): (Decimal("1.15"), ExchangeRateProviderEnum.APP),
+    (CurrencyEnum.RUB, CurrencyEnum.USD): (Decimal("0.0134"), ExchangeRateProviderEnum.APP),
+    (CurrencyEnum.RUB, CurrencyEnum.EUR): (Decimal("0.0118"), ExchangeRateProviderEnum.APP),
+    (CurrencyEnum.RUB, CurrencyEnum.RUB): (Decimal("1.00"), ExchangeRateProviderEnum.APP),
+    (CurrencyEnum.EUR, CurrencyEnum.EUR): (Decimal("1.00"), ExchangeRateProviderEnum.APP),
+    (CurrencyEnum.USD, CurrencyEnum.USD): (Decimal("1.00"), ExchangeRateProviderEnum.APP)
 }
 
 
 async def get_exchange_rate_replacement(from_currency: CurrencyEnum, to_currency: CurrencyEnum) -> Decimal:
-    if from_currency == to_currency:
-        return Decimal("1.00")
+    return TEST_EXCHANGE_RATE_DICT.get((from_currency, to_currency))
 
-    key = (from_currency, to_currency)
-    return TEST_EXCHANGE_RATE_DICT.get(key)
+
+async def convert_using_exchange_rate(
+        balance: Decimal,
+        from_currency: CurrencyEnum,
+        to_currency: CurrencyEnum
+) -> tuple[Decimal, ExchangeRateProviderEnum]:
+    rate, provider = await get_exchange_rate_replacement(from_currency, to_currency)
+    converted_balance_and_provider = round(rate * balance, 2), provider
+    return converted_balance_and_provider

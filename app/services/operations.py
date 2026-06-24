@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 from app.contracts.render_files_interface import InterfaceFilesPDF
 from app.contracts.repository_operations import AbstractRepositoryOperation, AbstractRepositoryOperationHistory
 from app.contracts.unit_of_work_interface import InterfaceUnitOfWork
-from app.custom_enum import OperationOrderEnum, OperationTypeEnum
+from app.custom_enum import OperationOrderEnum, OperationTypeEnum, ExchangeRateProviderEnum
 from app.domain.dto import OperationHistoryDTO, WalletUpdateDTO
 from app.domain.entities import Operation
 
@@ -44,9 +44,9 @@ class ServiceOperation:
             from_wallet: WalletUpdateDTO,
             to_wallet: WalletUpdateDTO,
             amount: Decimal
-    ) -> tuple[OperationHistoryDTO, OperationHistoryDTO]:
+    ) -> tuple[OperationHistoryDTO, OperationHistoryDTO, ExchangeRateProviderEnum]:
         wallets = await self._repo_operation.transfer(from_wallet, to_wallet, amount, exchange_func=self._exchange_func)
-        from_wallet_updated, to_wallet_updated = wallets
+        from_wallet_updated, to_wallet_updated, provider = wallets
         operation_from_wallet = Operation(
             wallet_id=from_wallet_updated.id,
             amount=from_wallet_updated.balance,
@@ -66,7 +66,9 @@ class ServiceOperation:
             to_operation_and_wallet
         )
         await self._uow.commit()
-        return result
+        wallets_provider = list(result)
+        wallets_provider.append(provider)
+        return tuple(wallets_provider)
 
     async def get_operations_history(
             self,

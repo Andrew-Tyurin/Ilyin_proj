@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from decimal import Decimal
 
-from app.custom_enum import CurrencyEnum, OperationTypeEnum
+from app.custom_enum import CurrencyEnum, OperationTypeEnum, ExchangeRateProviderEnum
 from tests.moc_data.user_moc import (
     CreateUserDataclassMoc,
     ResultCreateUserDataclassMoc,
@@ -31,6 +31,7 @@ class User1:
     user_name: str = "test_user_1"
     password: str = "1234"
     access_token: str = "access_token_user_1"
+    provider = ExchangeRateProviderEnum.APP
 
 
 class User2:
@@ -38,6 +39,7 @@ class User2:
     user_name: str = "test_user_2"
     password: str = "12345"
     access_token: str = "access_token_user_2"
+    provider = ExchangeRateProviderEnum.APP
 
 
 class Wallet1User1:
@@ -138,13 +140,15 @@ user1_result_create_wallet2 = ResultCreateWalletDataclassMoc(
 user1_read_balance_zero_wallets = ReadSumBalanceWalletsDataclassMoc(
     user_id=User1.id,
     currency=CurrencyEnum.RUB,
-    total_balance=str(Decimal("0.00"))
+    total_balance=str(Decimal("0.00")),
+    provider=User1.provider
 )
 sum_rub_wallets = Wallet2User1.to_rub_rate * Wallet2User1.balance_add_income + Wallet1User1.balance_add_income
 user1_read_balance_not_zero_wallets = ReadSumBalanceWalletsDataclassMoc(
     user_id=User1.id,
     currency=CurrencyEnum.RUB,
-    total_balance=str(round(sum_rub_wallets, 2))
+    total_balance=str(round(sum_rub_wallets, 2)),
+    provider=User1.provider
 )
 
 user1_update_wallet1_add_income = UpdateWalletDataclassMoc(

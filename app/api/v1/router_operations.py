@@ -84,8 +84,12 @@ async def transfer_between_wallets(
         user_id_error = e.args[0]
         raise wallet_not_valid_balance_400(user_id_error)
 
-    response_from_wallet, response_to_wallet = results
-    return {"from_wallet": response_from_wallet, "to_wallet": response_to_wallet}
+    response_from_wallet, response_to_wallet, provider = results
+    return {
+        "from_wallet": response_from_wallet,
+        "to_wallet": response_to_wallet,
+        "provider": provider
+    }
 
 
 @router.get("/history")

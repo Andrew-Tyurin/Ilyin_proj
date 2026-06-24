@@ -7,7 +7,7 @@ from sqlalchemy.exc import IntegrityError, DBAPIError
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from app.contracts.repository_operations import AbstractRepositoryOperation, AbstractRepositoryOperationHistory
-from app.custom_enum import OperationOrderEnum
+from app.custom_enum import OperationOrderEnum, CurrencyEnum, ExchangeRateProviderEnum
 from app.domain.dto import WalletUpdateDTO, OperationDTO, OperationHistoryDTO
 from app.domain.entities import Operation, Wallet, WalletNotFoundError, WalletUpdateError
 from app.infrastructure.sqlalchemy_models import WalletORM, OperationWalletORM
@@ -69,14 +69,16 @@ class SqlAlchemyRepositoryOperation(AbstractRepositoryOperation):
             to_wallet: WalletUpdateDTO,
             amount: Decimal,
             **kwargs
-    ) -> tuple[Wallet, Wallet]:
-        exchange_func: Callable[[str, str], Awaitable[Decimal]] = kwargs.get("exchange_func")
+    ) -> tuple[Wallet, Wallet, ExchangeRateProviderEnum]:
+        exchange_func: Callable[
+            [Decimal, CurrencyEnum, CurrencyEnum], Awaitable[tuple[Decimal, ExchangeRateProviderEnum]]
+        ] = kwargs.get("exchange_func")
 
-        from_wallet_orm = await self._session.scalar(
+        from_wallet_orm: WalletORM | None = await self._session.scalar(
             select(WalletORM)
             .where(and_(WalletORM.id == from_wallet.id, WalletORM.user_id == from_wallet.user_id))
         )
-        to_wallet_orm = await self._session.scalar(
+        to_wallet_orm: WalletORM | None = await self._session.scalar(
             select(WalletORM)
             .where(and_(WalletORM.id == to_wallet.id, WalletORM.user_id == to_wallet.user_id))
         )
@@ -87,8 +89,7 @@ class SqlAlchemyRepositoryOperation(AbstractRepositoryOperation):
         if to_wallet_orm is None:
             raise WalletNotFoundError(to_wallet.id)
 
-        rate = await exchange_func(from_wallet_orm.currency, to_wallet_orm.currency)
-        serialized_amount = round(amount * rate, 2)
+        converted_balance, provider = await exchange_func(amount, from_wallet_orm.currency, to_wallet_orm.currency)
 
         try:
             from_wallet_orm.balance -= amount
@@ -97,7 +98,7 @@ class SqlAlchemyRepositoryOperation(AbstractRepositoryOperation):
             raise WalletUpdateError(from_wallet.id)
 
         try:
-            to_wallet_orm.balance += serialized_amount
+            to_wallet_orm.balance += converted_balance
             await self._session.flush()
         except (IntegrityError, DBAPIError):
             raise WalletUpdateError(to_wallet.id)
@@ -112,11 +113,11 @@ class SqlAlchemyRepositoryOperation(AbstractRepositoryOperation):
         to_wallet_updated = Wallet(
             id=to_wallet_orm.id,
             name=to_wallet_orm.name,
-            balance=serialized_amount,
+            balance=converted_balance,
             currency=to_wallet_orm.currency,
             user_id=to_wallet_orm.user_id,
         )
-        return from_wallet_updated, to_wallet_updated
+        return from_wallet_updated, to_wallet_updated, provider
 
 
 class SqlAlchemyRepositoryOperationHistory(AbstractRepositoryOperationHistory):
