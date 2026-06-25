@@ -3,20 +3,20 @@ from time import perf_counter
 
 import httpx
 
+from app.config_app import ExchangeRateSettings
 from app.custom_enum import CurrencyEnum, ExchangeRateProviderEnum
-
-CACHE_LIFETIME = 120
+from app.domain.rules import WalletRules
 
 EXCHANGE_RATE_DICT: dict[tuple[CurrencyEnum, CurrencyEnum], tuple[Decimal, ExchangeRateProviderEnum]] = {
-    (CurrencyEnum.USD, CurrencyEnum.RUB): (Decimal("75.00"), ExchangeRateProviderEnum.APP),
-    (CurrencyEnum.USD, CurrencyEnum.EUR): (Decimal("0.85"), ExchangeRateProviderEnum.APP),
-    (CurrencyEnum.EUR, CurrencyEnum.RUB): (Decimal("85.00"), ExchangeRateProviderEnum.APP),
-    (CurrencyEnum.EUR, CurrencyEnum.USD): (Decimal("1.15"), ExchangeRateProviderEnum.APP),
-    (CurrencyEnum.RUB, CurrencyEnum.USD): (Decimal("0.0134"), ExchangeRateProviderEnum.APP),
-    (CurrencyEnum.RUB, CurrencyEnum.EUR): (Decimal("0.0118"), ExchangeRateProviderEnum.APP),
-    (CurrencyEnum.RUB, CurrencyEnum.RUB): (Decimal("1.00"), ExchangeRateProviderEnum.APP),
-    (CurrencyEnum.EUR, CurrencyEnum.EUR): (Decimal("1.00"), ExchangeRateProviderEnum.APP),
-    (CurrencyEnum.USD, CurrencyEnum.USD): (Decimal("1.00"), ExchangeRateProviderEnum.APP),
+    (CurrencyEnum.USD, CurrencyEnum.RUB): (ExchangeRateSettings.usd_to_rub, ExchangeRateProviderEnum.APP),
+    (CurrencyEnum.USD, CurrencyEnum.EUR): (ExchangeRateSettings.usd_to_eur, ExchangeRateProviderEnum.APP),
+    (CurrencyEnum.EUR, CurrencyEnum.RUB): (ExchangeRateSettings.eur_to_rub, ExchangeRateProviderEnum.APP),
+    (CurrencyEnum.EUR, CurrencyEnum.USD): (ExchangeRateSettings.eur_to_usd, ExchangeRateProviderEnum.APP),
+    (CurrencyEnum.RUB, CurrencyEnum.USD): (ExchangeRateSettings.rub_to_usd, ExchangeRateProviderEnum.APP),
+    (CurrencyEnum.RUB, CurrencyEnum.EUR): (ExchangeRateSettings.rub_to_eur, ExchangeRateProviderEnum.APP),
+    (CurrencyEnum.RUB, CurrencyEnum.RUB): (ExchangeRateSettings.rub_to_rub, ExchangeRateProviderEnum.APP),
+    (CurrencyEnum.EUR, CurrencyEnum.EUR): (ExchangeRateSettings.eur_to_eur, ExchangeRateProviderEnum.APP),
+    (CurrencyEnum.USD, CurrencyEnum.USD): (ExchangeRateSettings.usd_to_usd, ExchangeRateProviderEnum.APP),
 }
 CACHE_EXCHANGE_RATE_DICT: dict[
     tuple[CurrencyEnum, CurrencyEnum], tuple[Decimal, ExchangeRateProviderEnum, float | int]
@@ -25,7 +25,7 @@ CACHE_EXCHANGE_RATE_DICT: dict[
 
 async def get_exchange_rates_via_an_api(from_currency: CurrencyEnum, to_currency: CurrencyEnum, url: str) -> Decimal:
     async with httpx.AsyncClient() as client:
-        response = await client.get(url, timeout=5)
+        response = await client.get(url, timeout=ExchangeRateSettings.timeout_response)
         response.raise_for_status()  # raise except если статус код != 200
         data = response.json()
         currency_all = data[from_currency]
@@ -62,12 +62,12 @@ async def get_exchange_rate(
     cache_exchange_rate = CACHE_EXCHANGE_RATE_DICT.get(key)
     if cache_exchange_rate:
         current_lifetime = int(perf_counter() - cache_exchange_rate[2])
-        if current_lifetime > CACHE_LIFETIME:
+        if current_lifetime > ExchangeRateSettings.cache_lifetime:
             rate_and_provider = await preparation_before_get_rate(from_currency, to_currency)
             if rate_and_provider:
                 return rate_and_provider
         else:
-            print(f"Запрос из кэша {current_lifetime}/{CACHE_LIFETIME}")
+            print(f"Запрос из кэша {current_lifetime}/{ExchangeRateSettings.cache_lifetime}")
             return cache_exchange_rate[:2]
     else:
         rate_and_provider = await preparation_before_get_rate(from_currency, to_currency)
@@ -84,5 +84,5 @@ async def convert_using_exchange_rate(
         to_currency: CurrencyEnum
 ) -> tuple[Decimal, ExchangeRateProviderEnum]:
     rate, provider = await get_exchange_rate(from_currency, to_currency)
-    converted_balance_and_provider = round(rate * balance, 2), provider
+    converted_balance_and_provider = (round(rate * balance, WalletRules.balance_length_after_point), provider)
     return converted_balance_and_provider

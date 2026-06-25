@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Query, Path
 
 from app.api.v1.dependencies import UserServiceDep, TokenServiceDep, AccessToken
-from app.api.v1.http_exception import user_not_found_404, user_already_exists_400, user_incorrect_data_400
+from app.api.v1.http_exception import user_not_found_404, user_already_exists_409, user_incorrect_data_400
 from app.api.v1.schemas import BaseUserSchema, ReadUserSchema, ReadUserAndTokenSchema, ReadPayloadTokenSchema
 from app.domain.entities import User, UserNotFoundError, UserIncorrectDataError, UserAlreadyExistsError
 
@@ -21,7 +21,7 @@ async def create_user(service: UserServiceDep, user: BaseUserSchema) -> ReadUser
     try:
         result = await service.create_user(user_dto)
     except UserAlreadyExistsError:
-        raise user_already_exists_400(user.user_name)
+        raise user_already_exists_409(user.user_name)
     return result
 
 

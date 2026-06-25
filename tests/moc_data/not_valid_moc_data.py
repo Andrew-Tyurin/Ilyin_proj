@@ -1,10 +1,12 @@
 from datetime import date
-from app.domain.rules import UserRules, WalletOperationRules
+from app.domain.rules import UserRules, WalletOperationRules, WalletRules
 
+status_code_201 = 201
 status_code_400 = 400
 status_code_401 = 401
 status_code_404 = 404
 status_code_422 = 422
+status_code_409 = 409
 
 create_user_with_short_password = {"user_name": "test_user1", "password": "12",}
 expected_short_password = {'ctx': {'min_length': UserRules.password_min_length}, 'input': '12', 'loc': ['body', 'password'], 'msg': f'String should have at least {UserRules.password_min_length} characters', 'type': 'string_too_short'}
@@ -47,6 +49,9 @@ expected_wallet_non_existent_currency = {'ctx': {'expected': "'rub', 'usd' or 'e
 
 wallet_exist_name = 'SBER'
 expected_wallet_exist = f"Wallet wallet_name='{wallet_exist_name}' already exists"
+
+create_wallets_overflow = [{"name": f"SBER{i}", "currency": 'rub'} for i in range(WalletRules.max_amount_wallets + 1)]
+expected_response_wallets_overflow = f"The maximum number of wallets you can create is: {WalletRules.max_amount_wallets}"
 
 exist_wallet_id = 1
 wallet_add_negative_amount = {

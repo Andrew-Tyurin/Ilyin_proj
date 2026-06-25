@@ -2,14 +2,15 @@ import asyncio
 from decimal import Decimal
 from typing import Callable, Awaitable
 
-from sqlalchemy import select, and_
+from sqlalchemy import select, and_, func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from app.contracts.repository_wallets import AbstractRepositoryWallet
 from app.custom_enum import CurrencyEnum, ExchangeRateProviderEnum
 from app.domain.dto import WalletsTotalBalanceDTO, WalletDTO
-from app.domain.entities import Wallet, WalletNotFoundError, WalletAlreadyExistsError
+from app.domain.entities import Wallet, WalletNotFoundError, WalletAlreadyExistsError, CreationLimitExceededWalletsError
+from app.domain.rules import WalletRules
 from app.infrastructure.sqlalchemy_models import WalletORM
 
 
@@ -71,6 +72,14 @@ class SqlAlchemyRepositoryWallet(AbstractRepositoryWallet):
         return [WalletDTO(**dict(wallet._mapping)) for wallet in wallets_result]
 
     async def add(self, wallet: Wallet) -> WalletDTO:
+        count_wallets: int = await self._session.scalar(
+            select(func.count(WalletORM.id))
+            .where(WalletORM.user_id == wallet.user_id)
+        )
+
+        if count_wallets >= WalletRules.max_amount_wallets:
+            raise CreationLimitExceededWalletsError()
+
         try:
             orm_wallet = WalletORM(user_id=wallet.user_id, name=wallet.name, currency=wallet.currency)
             self._session.add(orm_wallet)

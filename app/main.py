@@ -1,5 +1,7 @@
+import time
+
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from starlette.staticfiles import StaticFiles
 
 from app.api.v1.router_operations import router as operation_router
@@ -8,6 +10,17 @@ from app.api.v1.router_wallets import router as wallet_router
 from app.config_app import StartAppSettings
 
 app = FastAPI()
+
+
+@app.middleware("http")
+async def add_process_time_header(request: Request, call_next):
+    start_time_response = time.perf_counter()
+    response = await call_next(request)
+    end_time_response = time.perf_counter() - start_time_response
+    response.headers["X-Process-Time"] = str(round(end_time_response, 4))
+    return response
+
+
 app.include_router(user_router, prefix="/api/v1/users", tags=["users"])
 app.include_router(wallet_router, prefix="/api/v1/my/wallets", tags=["wallets"])
 app.include_router(operation_router, prefix="/api/v1/my/wallets/operations", tags=["operations on wallets"])

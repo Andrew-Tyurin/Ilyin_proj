@@ -5,9 +5,11 @@ from httpx import AsyncClient
 from pygments.lexers import data
 
 from tests.moc_data.not_valid_moc_data import (
+    status_code_201,
     status_code_400,
     status_code_401,
     status_code_404,
+    status_code_409,
     status_code_422,
     create_user_with_short_password,
     expected_short_password,
@@ -52,7 +54,9 @@ from tests.moc_data.not_valid_moc_data import (
     params_create_pdf_not_valid_timezone,
     params_create_pdf_date_from_more_date_to,
     wallet_add_income_zero_balance,
-    expected_wallet_add_zero_amount
+    expected_wallet_add_zero_amount,
+    create_wallets_overflow,
+    expected_response_wallets_overflow,
 )
 from tests.moc_data.valid_moc_data import (
     create_user1,
@@ -109,7 +113,7 @@ class TestNotValidUser:
             json=create_user1.model_dump(),
         )
         data = response.json()
-        assert response.status_code == status_code_400
+        assert response.status_code == status_code_409
         assert data["detail"] == expected_user_exist
 
     @pytest.mark.asyncio
@@ -193,8 +197,24 @@ class TestNotValidWallet:
             json=user1_create_wallet_rub.model_dump(),
         )
         data = response.json()
-        assert response.status_code == status_code_400
+        assert response.status_code == status_code_409
         assert data["detail"] == expected_wallet_exist
+
+    @pytest.mark.asyncio
+    async def test_create_wallets_overflow(self, async_client: AsyncClient, token_user: str):
+        for request in create_wallets_overflow:
+            response = await async_client.post(
+                "/api/v1/my/wallets",
+                json=request,
+                headers={"Authorization": f"Bearer {token_user}"}
+            )
+            if response.status_code != status_code_201:
+                data = response.json()
+                assert response.status_code == status_code_422
+                assert data["detail"] == expected_response_wallets_overflow
+                break
+        else:
+            assert False
 
 
 class TestNotValidOperationsWallet:
@@ -271,7 +291,8 @@ class TestNotValidOperationsWallet:
             assert data["detail"][0] == expected_transfer_not_valid_between_wallets
 
     @pytest.mark.asyncio
-    async def test_get_operation_non_existent_wallet(self, async_client_and_authorized_user_and_full_wallets: AsyncClient):
+    async def test_get_operation_non_existent_wallet(self,
+                                                     async_client_and_authorized_user_and_full_wallets: AsyncClient):
         response = await async_client_and_authorized_user_and_full_wallets.get(
             "/api/v1/my/wallets/operations/history?wallet_id=10"
         )
@@ -280,7 +301,8 @@ class TestNotValidOperationsWallet:
         assert data['detail'] == expected_not_exist_wallet_id
 
     @pytest.mark.asyncio
-    async def test_get_operation_non_existent_order_by(self, async_client_and_authorized_user_and_full_wallets: AsyncClient):
+    async def test_get_operation_non_existent_order_by(self,
+                                                       async_client_and_authorized_user_and_full_wallets: AsyncClient):
         response = await async_client_and_authorized_user_and_full_wallets.get(
             f"/api/v1/my/wallets/operations/history?order_by_data={non_existent_order_by_data}"
         )

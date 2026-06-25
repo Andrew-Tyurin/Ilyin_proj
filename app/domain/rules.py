@@ -19,6 +19,7 @@ class WalletRules:
     balance_max: Decimal = Decimal("999_999_999_999.99")
     balance_length: int = 14
     balance_length_after_point: int = 2
+    max_amount_wallets: int = 20
 
 
 @dataclass(frozen=True)

@@ -57,3 +57,7 @@ class WalletAlreadyExistsError(Exception):
 
 class WalletUpdateError(Exception):
     pass
+
+
+class CreationLimitExceededWalletsError(Exception):
+    pass
