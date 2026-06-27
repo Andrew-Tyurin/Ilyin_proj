@@ -1,4 +1,3 @@
-import asyncio
 from decimal import Decimal
 from typing import Callable, Awaitable
 
@@ -29,9 +28,9 @@ class SqlAlchemyRepositoryWallet(AbstractRepositoryWallet):
             .where(WalletORM.user_id == user_id)
         )).all()
 
-        converted_balance_and_providers = await asyncio.gather(
-            *[exchange_func(row.balance, row.currency, currency_const) for row in short_wallets]
-        )
+        converted_balance_and_providers =  [
+            await exchange_func(row.balance, row.currency, currency_const) for row in short_wallets
+        ]
 
         provider = ''
         total_balance = 0

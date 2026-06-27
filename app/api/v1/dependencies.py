@@ -13,7 +13,7 @@ from app.infrastructure.repository_sa_users import SqlAlchemyRepositoryUser
 from app.infrastructure.repository_sa_wallet import SqlAlchemyRepositoryWallet
 from app.infrastructure.sqlalchemy_db import AsyncSessionLocal
 from app.infrastructure.unit_of_work_sa import SqlAlchemyUnitOfWork
-from app.services.exchange_rate import convert_using_exchange_rate
+from app.infrastructure.exchange_rate import convert_using_exchange_rate
 from app.services.operations import ServiceOperation
 from app.services.users import ServiceUser
 from app.services.wallets import ServiceWallet

@@ -29,4 +29,4 @@
 
 #### 7) запускаем из корня проекта, bash: `python main.py` или `uvicorn app.main:app --reload`, а для тестов: pytest -vs
 
-#### 8) Документация по http://localhost:8000/docs а фронт по http://localhost:8000/static/index.html
+#### 8) Документация по http://localhost:8000/docs а фронт по http://localhost:8000/ui/index.html но проверить main.py и раскомитить строку с подключением.
