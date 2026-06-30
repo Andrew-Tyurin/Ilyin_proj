@@ -21,11 +21,15 @@ class SettingsMainEnv(BaseSettings):
 
 
 class PsqlEnv(SettingsMainEnv):
-    ASYNC_DB_URL: PostgresDsn | None = None
+    DATABASE_NAME: str | None = None
+    DATABASE_USERNAME: str | None = None
+    DATABASE_PASSWORD: str | None = None
+    DATABASE_HOST: str | None = None
+    DATABASE_PORT: str | None = None
 
     @property
-    def async_db_url_str(self) -> str:
-        return str(self.ASYNC_DB_URL)
+    def async_db_url_str(self) -> PostgresDsn:
+        return f'postgresql+asyncpg://{self.DATABASE_USERNAME}:{self.DATABASE_PASSWORD}@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}'
 
 
 class SecretKeyEnv(SettingsMainEnv):

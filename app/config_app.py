@@ -8,7 +8,7 @@ from app.config_env import secret_key_env, psql_env, APP_ENV
 
 @dataclass(frozen=True)
 class StartAppSettings:
-    app: str = "main:app"
+    app: str = "app.main:app"
     host: str = "0.0.0.0"
     port: int = 8000
     reload: bool = True

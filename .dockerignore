@@ -1,0 +1,52 @@
+# git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+
+# python cache
+__pycache__
+*.py[cod]
+*.pyo
+
+# pytest
+.pytest_cache
+tests
+pytest.ini
+
+# virtual env
+.venv
+venv
+env
+
+# env files (не копировать секреты в image)
+.env
+.env.*
+
+# docs
+README.md
+
+# OS
+.DS_Store
+Thumbs.db
+
+# logs
+*.log
+
+# temp
+*.tmp
+*.swp
+
+# build artifacts
+build
+dist
+*.egg-info
+
+# frontend dependencies (если появятся)
+node_modules
+
+# coverage
+.coverage
+htmlcov
