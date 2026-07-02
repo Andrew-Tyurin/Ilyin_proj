@@ -1,3 +1,4 @@
+import asyncio
 from decimal import Decimal
 
 from app.config_app import ExchangeRateDefaultSettings
@@ -29,3 +30,17 @@ async def convert_using_exchange_rate(
     rate, provider = await get_exchange_rate_replacement(from_currency, to_currency)
     converted_balance_and_provider = (round(rate * balance, WalletRules.balance_length_after_point), provider)
     return converted_balance_and_provider
+
+
+async def slow_convert_one_to_one(
+        balance: Decimal,
+        from_currency: CurrencyEnum,
+        to_currency: CurrencyEnum
+) -> tuple[Decimal, ExchangeRateProviderEnum]:
+    """
+    Имитирует реалистичный ответ внешнего API курсов: в проде такой запрос
+    может занимать заметное время (таймаут — до 5 секунд). Курс 1:1 упрощает
+    арифметику в тестах.
+    """
+    await asyncio.sleep(0.05)
+    return balance, ExchangeRateProviderEnum.APP
