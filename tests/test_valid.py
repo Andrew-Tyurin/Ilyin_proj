@@ -4,7 +4,7 @@ from unittest.mock import patch
 import pytest
 from httpx import AsyncClient
 
-from tests.moc_data.valid_moc_data import (
+from tests.mock_data.valid_mock_data import (
     read_user1,
     read_user2,
     create_user1,

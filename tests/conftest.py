@@ -14,7 +14,7 @@ from app.infrastructure.sqlalchemy_db import (
 )
 from app.infrastructure.sqlalchemy_models import UserORM, WalletORM, OperationWalletORM
 from app.main import app
-from moc_data.valid_moc_data import (
+from mock_data.valid_mock_data import (
     create_user1,
     create_user2,
     user1_create_wallet_rub,
@@ -24,27 +24,27 @@ from moc_data.valid_moc_data import (
     user1_create_wallet_operation_rub,
     user1_create_wallet_operation_usd,
 )
-from tests.moc_data.user_moc import CreateUserDataclassMoc
-from tests.moc_data.wallet_moc import CreateWalletDataclassMoc, CreateFullWalletDataclassMoc, \
-    CreateOperationWalletDataclassMoc
+from tests.mock_data.user_mock import CreateUserDataclassMock
+from tests.mock_data.wallet_mock import CreateWalletDataclassMock, CreateFullWalletDataclassMock, \
+    CreateOperationWalletDataclassMock
 
 
-async def get_user_orm(user: CreateUserDataclassMoc, hash_argon2: HashArgon2) -> UserORM:
+async def get_user_orm(user: CreateUserDataclassMock, hash_argon2: HashArgon2) -> UserORM:
     password_hash = hash_argon2.hash(user.password)
     user_dict = user.model_dump()
     user_dict["password"] = password_hash
     return UserORM(**user_dict)
 
 
-async def get_wallet_orm(user_id: int, wallet: CreateFullWalletDataclassMoc) -> WalletORM:
+async def get_wallet_orm(user_id: int, wallet: CreateFullWalletDataclassMock) -> WalletORM:
     return WalletORM(**wallet.model_dump(), user_id=user_id)
 
 
-async def get_full_wallet_orm(user_id: int, wallet: CreateWalletDataclassMoc) -> WalletORM:
+async def get_full_wallet_orm(user_id: int, wallet: CreateWalletDataclassMock) -> WalletORM:
     return WalletORM(**wallet.model_dump(), user_id=user_id)
 
 
-async def get_operation_wallet_orm(operation: CreateOperationWalletDataclassMoc) -> OperationWalletORM:
+async def get_operation_wallet_orm(operation: CreateOperationWalletDataclassMock) -> OperationWalletORM:
     return OperationWalletORM(**operation.model_dump())
 
 

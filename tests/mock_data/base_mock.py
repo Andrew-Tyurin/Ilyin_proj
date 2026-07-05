@@ -7,6 +7,6 @@ class DataclassMeta(type):
         return dataclass(cls)
 
 
-class BaseDataclassMoc(metaclass=DataclassMeta):
+class BaseDataclassMock(metaclass=DataclassMeta):
     def model_dump(self) -> dict:
         return asdict(self)

@@ -2,24 +2,24 @@ from datetime import datetime, timezone
 from decimal import Decimal
 
 from app.custom_enum import CurrencyEnum, OperationTypeEnum, ExchangeRateProviderEnum
-from tests.moc_data.user_moc import (
-    CreateUserDataclassMoc,
-    ResultCreateUserDataclassMoc,
-    ReadUserAuthorizationMoc,
-    ReadUserDataclassMoc,
-    ReadPayloadUserJwtDataclassMoc
+from tests.mock_data.user_mock import (
+    CreateUserDataclassMock,
+    ResultCreateUserDataclassMock,
+    ReadUserAuthorizationMock,
+    ReadUserDataclassMock,
+    ReadPayloadUserJwtDataclassMock
 )
-from tests.moc_data.wallet_moc import (
-    CreateWalletDataclassMoc,
-    CreateFullWalletDataclassMoc,
-    CreateOperationWalletDataclassMoc,
-    ReadWalletDataclassMoc,
-    ResultCreateWalletDataclassMoc,
-    ReadSumBalanceWalletsDataclassMoc,
-    UpdateWalletDataclassMoc,
-    ReadResultUpdateWalletDataclassMoc,
-    ReadOperationWalletDataclassMoc,
-    TransferBetweenWalletDataclassMoc,
+from tests.mock_data.wallet_mock import (
+    CreateWalletDataclassMock,
+    CreateFullWalletDataclassMock,
+    CreateOperationWalletDataclassMock,
+    ReadWalletDataclassMock,
+    ResultCreateWalletDataclassMock,
+    ReadSumBalanceWalletsDataclassMock,
+    UpdateWalletDataclassMock,
+    ReadResultUpdateWalletDataclassMock,
+    ReadOperationWalletDataclassMock,
+    TransferBetweenWalletDataclassMock,
 )
 
 status_code_200 = 200
@@ -70,57 +70,57 @@ class Wallet2User1:
     balance_transfer: Decimal = Decimal("50.00")
 
 
-create_user1 = CreateUserDataclassMoc(user_name=User1.user_name, password=User1.password)
-create_user2 = CreateUserDataclassMoc(user_name=User2.user_name, password=User2.password)
+create_user1 = CreateUserDataclassMock(user_name=User1.user_name, password=User1.password)
+create_user2 = CreateUserDataclassMock(user_name=User2.user_name, password=User2.password)
 
-read_user1 = ReadUserDataclassMoc(id=User1.id, user_name=User1.user_name)
-read_user2 = ReadUserDataclassMoc(id=User2.id, user_name=User2.user_name)
+read_user1 = ReadUserDataclassMock(id=User1.id, user_name=User1.user_name)
+read_user2 = ReadUserDataclassMock(id=User2.id, user_name=User2.user_name)
 
-result_create_user1 = ResultCreateUserDataclassMoc(
+result_create_user1 = ResultCreateUserDataclassMock(
     id=User1.id,
     user_name=User1.user_name,
     access_token=User1.access_token
 )
 
-user1_read_authorization = ReadUserAuthorizationMoc(**result_create_user1.model_dump())
+user1_read_authorization = ReadUserAuthorizationMock(**result_create_user1.model_dump())
 
-user1_read_payload_jwt = ReadPayloadUserJwtDataclassMoc(id=User1.id, user_name=User1.user_name, expires_time_life=1)
+user1_read_payload_jwt = ReadPayloadUserJwtDataclassMock(id=User1.id, user_name=User1.user_name, expires_time_life=1)
 
-user1_create_wallet_rub = CreateWalletDataclassMoc(name=Wallet1User1.name, currency=CurrencyEnum.RUB)
-user1_create_wallet_usd = CreateWalletDataclassMoc(name=Wallet2User1.name, currency=CurrencyEnum.USD)
+user1_create_wallet_rub = CreateWalletDataclassMock(name=Wallet1User1.name, currency=CurrencyEnum.RUB)
+user1_create_wallet_usd = CreateWalletDataclassMock(name=Wallet2User1.name, currency=CurrencyEnum.USD)
 
-user1_create_full_wallet_rub = CreateFullWalletDataclassMoc(
+user1_create_full_wallet_rub = CreateFullWalletDataclassMock(
     name=Wallet1User1.name,
     currency=CurrencyEnum.RUB,
     balance=Wallet1User1.balance_add_income
 )
-user1_create_full_wallet_usd = CreateFullWalletDataclassMoc(
+user1_create_full_wallet_usd = CreateFullWalletDataclassMock(
     name=Wallet2User1.name,
     currency=CurrencyEnum.USD,
     balance=Wallet2User1.balance_add_income
 )
 
-user1_create_wallet_operation_rub = CreateOperationWalletDataclassMoc(
+user1_create_wallet_operation_rub = CreateOperationWalletDataclassMock(
     wallet_id=Wallet1User1.id,
     type=OperationTypeEnum.INCOME,
     amount=Wallet1User1.balance_add_income,
     description=None,
 )
-user1_create_wallet_operation_usd = CreateOperationWalletDataclassMoc(
+user1_create_wallet_operation_usd = CreateOperationWalletDataclassMock(
     wallet_id=Wallet2User1.id,
     type=OperationTypeEnum.INCOME,
     amount=Wallet2User1.balance_add_income,
     description=None,
 )
 
-user1_result_wallet1 = ReadWalletDataclassMoc(
+user1_result_wallet1 = ReadWalletDataclassMock(
     id=Wallet1User1.id,
     name=Wallet1User1.name,
     balance=str(Wallet1User1.start_balance),
     currency=CurrencyEnum.RUB,
     user_id=User1.id
 )
-user1_result_wallet2 = ReadWalletDataclassMoc(
+user1_result_wallet2 = ReadWalletDataclassMock(
     id=Wallet2User1.id,
     name=Wallet2User1.name,
     balance=str(Wallet2User1.start_balance),
@@ -128,123 +128,123 @@ user1_result_wallet2 = ReadWalletDataclassMoc(
     user_id=User1.id
 )
 
-user1_result_create_wallet1 = ResultCreateWalletDataclassMoc(
+user1_result_create_wallet1 = ResultCreateWalletDataclassMock(
     message=f"wallet '{Wallet1User1.name}' created",
     wallet=user1_result_wallet1,
 )
-user1_result_create_wallet2 = ResultCreateWalletDataclassMoc(
+user1_result_create_wallet2 = ResultCreateWalletDataclassMock(
     message=f"wallet '{Wallet2User1.name}' created",
     wallet=user1_result_wallet2,
 )
 
-user1_read_balance_zero_wallets = ReadSumBalanceWalletsDataclassMoc(
+user1_read_balance_zero_wallets = ReadSumBalanceWalletsDataclassMock(
     user_id=User1.id,
     currency=CurrencyEnum.RUB,
     total_balance=str(Decimal("0.00")),
     provider=User1.provider
 )
 sum_rub_wallets = Wallet2User1.to_rub_rate * Wallet2User1.balance_add_income + Wallet1User1.balance_add_income
-user1_read_balance_not_zero_wallets = ReadSumBalanceWalletsDataclassMoc(
+user1_read_balance_not_zero_wallets = ReadSumBalanceWalletsDataclassMock(
     user_id=User1.id,
     currency=CurrencyEnum.RUB,
     total_balance=str(round(sum_rub_wallets, 2)),
     provider=User1.provider
 )
 
-user1_update_wallet1_add_income = UpdateWalletDataclassMoc(
+user1_update_wallet1_add_income = UpdateWalletDataclassMock(
     wallet_id=Wallet1User1.id,
     amount=str(Wallet1User1.balance_add_income),
     description=Wallet1User1.description_add_income,
 )
-user1_update_wallet1_add_expense = UpdateWalletDataclassMoc(
+user1_update_wallet1_add_expense = UpdateWalletDataclassMock(
     wallet_id=Wallet1User1.id,
     amount=str(Wallet1User1.balance_add_expense),
     description=Wallet1User1.description_add_expense,
 )
 
-user1_operation_wallet1_add_income = ReadOperationWalletDataclassMoc(
+user1_operation_wallet1_add_income = ReadOperationWalletDataclassMock(
     id=1,
     type=OperationTypeEnum.INCOME,
     amount=str(Wallet1User1.balance_add_income),
     description=Wallet1User1.description_add_income,
     created_at=datetime.now(timezone.utc)
 )
-user1_result_update_wallet1_add_income = ReadResultUpdateWalletDataclassMoc(
+user1_result_update_wallet1_add_income = ReadResultUpdateWalletDataclassMock(
     wallet_id=Wallet1User1.id,
     wallet_name=Wallet1User1.name,
     currency=Wallet1User1.currency,
     operation=user1_operation_wallet1_add_income,
 )
 
-user1_operation_wallet1_add_expense = ReadOperationWalletDataclassMoc(
+user1_operation_wallet1_add_expense = ReadOperationWalletDataclassMock(
     id=3,
     type=OperationTypeEnum.EXPENSE,
     amount=str(Wallet1User1.balance_add_expense),
     description=Wallet1User1.description_add_expense,
     created_at=datetime.now(timezone.utc)
 )
-user1_result_update_wallet1_add_expense = ReadResultUpdateWalletDataclassMoc(
+user1_result_update_wallet1_add_expense = ReadResultUpdateWalletDataclassMock(
     wallet_id=Wallet1User1.id,
     wallet_name=Wallet1User1.name,
     currency=Wallet1User1.currency,
     operation=user1_operation_wallet1_add_expense,
 )
 
-user1_transfer_between = TransferBetweenWalletDataclassMoc(
+user1_transfer_between = TransferBetweenWalletDataclassMock(
     from_wallet_id=Wallet2User1.id,
     to_wallet_id=Wallet1User1.id,
     amount=str(Wallet2User1.balance_transfer)
 )
 
-user1_operation_transfer_between_from_wallet2 = ReadOperationWalletDataclassMoc(
+user1_operation_transfer_between_from_wallet2 = ReadOperationWalletDataclassMock(
     id=3,
     type=OperationTypeEnum.TRANSFER_EXPENSE,
     amount=str(Wallet2User1.balance_transfer),
     description=f"transfer into wallet_id={Wallet1User1.id}",
     created_at=datetime.now(timezone.utc)
 )
-user1_result_transfer_between_from_wallet2 = ReadResultUpdateWalletDataclassMoc(
+user1_result_transfer_between_from_wallet2 = ReadResultUpdateWalletDataclassMock(
     wallet_id=Wallet2User1.id,
     wallet_name=Wallet2User1.name,
     currency=Wallet2User1.currency,
     operation=user1_operation_transfer_between_from_wallet2,
 )
 
-user1_operation_transfer_between_to_wallet1 = ReadOperationWalletDataclassMoc(
+user1_operation_transfer_between_to_wallet1 = ReadOperationWalletDataclassMock(
     id=4,
     type=OperationTypeEnum.TRANSFER_INCOME,
     amount=str(round(Wallet2User1.balance_transfer * Wallet2User1.to_rub_rate, 2)),
     description=f"transfer from wallet_id={Wallet2User1.id}",
     created_at=datetime.now(timezone.utc)
 )
-user1_result_transfer_between_to_wallet1 = ReadResultUpdateWalletDataclassMoc(
+user1_result_transfer_between_to_wallet1 = ReadResultUpdateWalletDataclassMock(
     wallet_id=Wallet1User1.id,
     wallet_name=Wallet1User1.name,
     currency=Wallet1User1.currency,
     operation=user1_operation_transfer_between_to_wallet1,
 )
 
-user1_read_operation_income_wallet1 = ReadOperationWalletDataclassMoc(
+user1_read_operation_income_wallet1 = ReadOperationWalletDataclassMock(
     id=1,
     type=OperationTypeEnum.INCOME,
     amount=str(Wallet1User1.balance_add_income),
     description=None,
     created_at=datetime.now(timezone.utc)
 )
-user1_result_read_operation_income_wallet1 = ReadResultUpdateWalletDataclassMoc(
+user1_result_read_operation_income_wallet1 = ReadResultUpdateWalletDataclassMock(
     wallet_id=Wallet1User1.id,
     wallet_name=Wallet1User1.name,
     currency=Wallet1User1.currency,
     operation=user1_read_operation_income_wallet1,
 )
-user1_read_operation_income_wallet2 = ReadOperationWalletDataclassMoc(
+user1_read_operation_income_wallet2 = ReadOperationWalletDataclassMock(
     id=2,
     type=OperationTypeEnum.INCOME,
     amount=str(Wallet2User1.balance_add_income),
     description=None,
     created_at=datetime.now(timezone.utc)
 )
-user1_result_read_operation_income_wallet2 = ReadResultUpdateWalletDataclassMoc(
+user1_result_read_operation_income_wallet2 = ReadResultUpdateWalletDataclassMock(
     wallet_id=Wallet2User1.id,
     wallet_name=Wallet2User1.name,
     currency=Wallet2User1.currency,

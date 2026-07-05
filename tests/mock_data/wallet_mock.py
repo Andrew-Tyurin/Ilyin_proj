@@ -3,23 +3,23 @@ from decimal import Decimal
 from typing import TypeAlias
 
 from app.custom_enum import CurrencyEnum, OperationTypeEnum, ExchangeRateProviderEnum
-from tests.moc_data.base_moc import BaseDataclassMoc
+from tests.mock_data.base_mock import BaseDataclassMock
 
 DecimalStr: TypeAlias = str
 
 
-class CreateWalletDataclassMoc(BaseDataclassMoc):
+class CreateWalletDataclassMock(BaseDataclassMock):
     name: str
     currency: CurrencyEnum
 
 
-class CreateFullWalletDataclassMoc(BaseDataclassMoc):
+class CreateFullWalletDataclassMock(BaseDataclassMock):
     name: str
     balance: Decimal
     currency: CurrencyEnum
 
 
-class ReadWalletDataclassMoc(BaseDataclassMoc):
+class ReadWalletDataclassMock(BaseDataclassMock):
     id: int
     name: str
     balance: DecimalStr
@@ -27,32 +27,32 @@ class ReadWalletDataclassMoc(BaseDataclassMoc):
     user_id: int
 
 
-class ResultCreateWalletDataclassMoc(BaseDataclassMoc):
+class ResultCreateWalletDataclassMock(BaseDataclassMock):
     message: str
-    wallet: ReadWalletDataclassMoc
+    wallet: ReadWalletDataclassMock
 
 
-class ReadSumBalanceWalletsDataclassMoc(BaseDataclassMoc):
+class ReadSumBalanceWalletsDataclassMock(BaseDataclassMock):
     user_id: int
     currency: CurrencyEnum
     total_balance: DecimalStr
     provider: ExchangeRateProviderEnum
 
 
-class UpdateWalletDataclassMoc(BaseDataclassMoc):
+class UpdateWalletDataclassMock(BaseDataclassMock):
     wallet_id: int
     amount: Decimal
     description: str | None
 
 
-class CreateOperationWalletDataclassMoc(BaseDataclassMoc):
+class CreateOperationWalletDataclassMock(BaseDataclassMock):
     wallet_id: int
     type: OperationTypeEnum
     amount: Decimal
     description: str | None
 
 
-class ReadOperationWalletDataclassMoc(BaseDataclassMoc):
+class ReadOperationWalletDataclassMock(BaseDataclassMock):
     id: int
     type: OperationTypeEnum
     amount: DecimalStr
@@ -60,14 +60,14 @@ class ReadOperationWalletDataclassMoc(BaseDataclassMoc):
     created_at: datetime
 
 
-class ReadResultUpdateWalletDataclassMoc(BaseDataclassMoc):
+class ReadResultUpdateWalletDataclassMock(BaseDataclassMock):
     wallet_id: int
     wallet_name: str
     currency: CurrencyEnum
-    operation: ReadOperationWalletDataclassMoc
+    operation: ReadOperationWalletDataclassMock
 
 
-class TransferBetweenWalletDataclassMoc(BaseDataclassMoc):
+class TransferBetweenWalletDataclassMock(BaseDataclassMock):
     from_wallet_id: int
     to_wallet_id: int
     amount: Decimal

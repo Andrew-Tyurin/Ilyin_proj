@@ -4,7 +4,7 @@ import pytest
 from httpx import AsyncClient
 from pygments.lexers import data
 
-from tests.moc_data.not_valid_moc_data import (
+from tests.mock_data.not_valid_mock_data import (
     status_code_201,
     status_code_400,
     status_code_401,
@@ -58,7 +58,7 @@ from tests.moc_data.not_valid_moc_data import (
     create_wallets_overflow,
     expected_response_wallets_overflow,
 )
-from tests.moc_data.valid_moc_data import (
+from tests.mock_data.valid_mock_data import (
     create_user1,
     user1_create_wallet_rub,
 )
