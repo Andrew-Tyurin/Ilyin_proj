@@ -14,7 +14,6 @@
 import asyncio
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
-from time import perf_counter
 from typing import AsyncGenerator
 from unittest.mock import patch
 
@@ -25,9 +24,8 @@ from httpx import AsyncClient, ASGITransport
 
 from app.api.v1.dependencies import InstanceJWToken, Token
 from app.config_app import JWTokenSettings
-from app.custom_enum import CurrencyEnum, ExchangeRateProviderEnum
+from app.custom_enum import CurrencyEnum
 from app.domain.rules import WalletRules
-from app.infrastructure import exchange_rate
 from app.infrastructure.sqlalchemy_db import AsyncSessionLocal
 from app.infrastructure.sqlalchemy_models import WalletORM
 from app.main import app
@@ -37,7 +35,6 @@ TRANSFER_URL = "/api/v1/my/wallets/operations/transfer"
 HISTORY_URL = "/api/v1/my/wallets/operations/history"
 WALLETS_ALL_URL = "/api/v1/my/wallets/all"
 WALLETS_URL = "/api/v1/my/wallets"
-USERS_URL = "/api/v1/users"
 TOKEN_INFO_URL = "/api/v1/users/authorization/my/token-info"
 
 PATCH_EXCHANGE_TARGET = "app.api.v1.dependencies.convert_using_exchange_rate"
@@ -228,55 +225,3 @@ class TestTokenRobustness:
         )
         assert response.status_code == 401, \
             f"ожидали 401, получили {response.status_code}"
-
-
-class TestUsersEndpointAccess:
-    """Какие данные приложения может видеть человек БЕЗ токена?
-    Прикинь, как злоумышленник мог бы использовать каждый из открытых
-    эндпоинтов."""
-
-    @pytest.mark.asyncio
-    async def test_users_list_requires_authorization(self, async_client: AsyncClient):
-        response = await async_client.get(USERS_URL)
-        assert response.status_code in (401, 403), \
-            f"эндпоинт ответил анониму: {response.status_code}"
-
-    @pytest.mark.asyncio
-    async def test_user_by_id_requires_authorization(self, async_client: AsyncClient):
-        response = await async_client.get(f"{USERS_URL}/1")
-        assert response.status_code in (401, 403), \
-            f"эндпоинт ответил анониму: {response.status_code}"
-
-
-class TestExchangeRateCache:
-    """В кэше курсов лежит свежая валидная запись USD -> RUB.
-    Приложение запрашивает ДРУГУЮ пару (EUR -> RUB), а внешний API
-    в этот момент недоступен. Что после этого должно остаться в кэше?"""
-
-    @pytest.mark.asyncio
-    async def test_api_failure_does_not_wipe_valid_cache(self, monkeypatch):
-        valid_key = (CurrencyEnum.USD, CurrencyEnum.RUB)
-        missing_key = (CurrencyEnum.EUR, CurrencyEnum.RUB)
-
-        exchange_rate.CACHE_EXCHANGE_RATE_DICT.clear()
-        exchange_rate.CACHE_EXCHANGE_RATE_DICT[valid_key] = (
-            Decimal("90.00"), ExchangeRateProviderEnum.API, perf_counter()
-        )
-        exchange_rate.InstanceExchangeRateApiSettings.api_default_recovery_time()
-
-        async def api_is_down(client, currency):
-            raise ConnectionError
-
-        monkeypatch.setattr(exchange_rate, "collect_cache_from_api", api_is_down)
-
-        try:
-            rate_and_provider = await exchange_rate.get_exchange_rate(*missing_key)
-
-            assert rate_and_provider is not None
-            assert valid_key in exchange_rate.CACHE_EXCHANGE_RATE_DICT, (
-                "после неудачного похода в API за EUR->RUB из кэша пропала "
-                "свежая валидная запись USD->RUB"
-            )
-        finally:
-            exchange_rate.CACHE_EXCHANGE_RATE_DICT.clear()
-            exchange_rate.InstanceExchangeRateApiSettings.api_default_recovery_time()

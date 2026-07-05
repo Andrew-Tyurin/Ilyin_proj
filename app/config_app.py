@@ -58,6 +58,11 @@ class ExchangeRateApiSettings:
     def api_default_recovery_time(self) -> None:
         self._api_start_recovery_time = 0
 
+    def api_current_recovery_time(self) -> int | float:
+        if self._api_start_recovery_time:
+            return perf_counter() - self._api_start_recovery_time
+        return 0
+
     @property
     def verification_of_recovery_time(self) -> bool:
         """
@@ -69,8 +74,7 @@ class ExchangeRateApiSettings:
         значит время ожидания прошло, пробуем опять постучать к api.
         """
         if self._api_start_recovery_time:
-            api_recovery_time_current = perf_counter() - self._api_start_recovery_time
-            time_current = round(api_recovery_time_current)
+            time_current = round(perf_counter() - self._api_start_recovery_time)
             if time_current > self.api_recovery_time_max:
                 self.api_default_recovery_time()
                 return True

@@ -74,20 +74,29 @@ class SqlAlchemyRepositoryOperation(AbstractRepositoryOperation):
             [Decimal, CurrencyEnum, CurrencyEnum], Awaitable[tuple[Decimal, ExchangeRateProviderEnum]]
         ] = kwargs.get("exchange_func")
 
-        from_wallet_orm: WalletORM | None = await self._session.scalar(
+        first_id, second_id = sorted([from_wallet.id, to_wallet.id])
+
+        first_locked_wallet: WalletORM | None = await self._session.scalar(
             select(WalletORM)
-            .where(and_(WalletORM.id == from_wallet.id, WalletORM.user_id == from_wallet.user_id))
+            .where(and_(WalletORM.id == first_id, WalletORM.user_id == from_wallet.user_id))
+            .with_for_update()
         )
-        to_wallet_orm: WalletORM | None = await self._session.scalar(
+        second_locked_wallet: WalletORM | None = await self._session.scalar(
             select(WalletORM)
-            .where(and_(WalletORM.id == to_wallet.id, WalletORM.user_id == to_wallet.user_id))
+            .where(and_(WalletORM.id == second_id, WalletORM.user_id == to_wallet.user_id))
+            .with_for_update()
         )
 
-        if from_wallet_orm is None:
-            raise WalletNotFoundError(from_wallet.id)
+        if first_locked_wallet is None:
+            raise WalletNotFoundError(first_id)
 
-        if to_wallet_orm is None:
-            raise WalletNotFoundError(to_wallet.id)
+        if second_locked_wallet is None:
+            raise WalletNotFoundError(second_id)
+
+        if first_locked_wallet.id == from_wallet.id:
+            from_wallet_orm, to_wallet_orm = first_locked_wallet, second_locked_wallet
+        else:
+            from_wallet_orm, to_wallet_orm = second_locked_wallet, first_locked_wallet
 
         converted_balance, provider = await exchange_func(amount, from_wallet_orm.currency, to_wallet_orm.currency)
 

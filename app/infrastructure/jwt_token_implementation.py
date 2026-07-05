@@ -46,7 +46,10 @@ class JWTokenImplementation(InterfaceToken):
                     raise self.raise_token_exception
         except InvalidTokenError:
             raise self.raise_token_exception
-        payload["sub"] = int(payload["sub"])
+        try:
+            payload["sub"] = int(payload["sub"])
+        except (ValueError, TypeError):
+            raise self.raise_token_exception
         return TokenPayloadDTO(**payload)
 
     def token_info_payload(self, token: str) -> UserLifetimeTokenDTO:

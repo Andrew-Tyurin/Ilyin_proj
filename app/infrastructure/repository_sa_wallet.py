@@ -1,7 +1,8 @@
+import asyncio
 from decimal import Decimal
 from typing import Callable, Awaitable
 
-from sqlalchemy import select, and_, func
+from sqlalchemy import select, and_, func, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
@@ -28,9 +29,9 @@ class SqlAlchemyRepositoryWallet(AbstractRepositoryWallet):
             .where(WalletORM.user_id == user_id)
         )).all()
 
-        converted_balance_and_providers =  [
-            await exchange_func(row.balance, row.currency, currency_const) for row in short_wallets
-        ]
+        converted_balance_and_providers = await asyncio.gather(*[
+            exchange_func(row.balance, row.currency, currency_const) for row in short_wallets
+        ])
 
         provider = ''
         total_balance = 0
@@ -71,6 +72,35 @@ class SqlAlchemyRepositoryWallet(AbstractRepositoryWallet):
         return [WalletDTO(**dict(wallet._mapping)) for wallet in wallets_result]
 
     async def add(self, wallet: Wallet) -> WalletDTO:
+        """
+        Создаёт новый кошелёк пользователя.
+
+        Перед проверкой количества существующих кошельков используется
+        `pg_advisory_xact_lock(user_id)` - транзакционная advisory-блокировка PostgreSQL.
+        В отличие от `SELECT ... FOR UPDATE`, она не блокирует строки таблицы `users`,
+        а создаёт логическую блокировку, привязанную к произвольному ключу (в данном
+        случае `user_id`).
+
+        Благодаря этому только одна транзакция может одновременно выполнять участок
+        кода `COUNT -> INSERT` для одного и того же пользователя. Остальные транзакции,
+        создающие кошелёк этому же пользователю, будут ожидать завершения первой,
+        после чего повторно выполнят проверку количества кошельков.
+
+        При этом операции с другими пользователями выполняются параллельно, а чтение
+        и изменение записи пользователя (`SELECT`, `UPDATE`, `DELETE`) не блокируются,
+        если они сами не используют эту advisory-блокировку. Такой подход предотвращает
+        нарушение бизнес-правила ограничения количества кошельков и не влияет на работу
+        остальных эндпоинтов приложения.
+
+        Итого: pg_advisory_xact_lock действует не на таблицу или строку, а только между
+        теми участками кода, которые добровольно договорились использовать один и тот же
+        ключ блокировки.
+        """
+        await self._session.execute(
+            text("SELECT pg_advisory_xact_lock(:id)"),
+            {"id": wallet.user_id},
+        )
+
         count_wallets: int = await self._session.scalar(
             select(func.count(WalletORM.id))
             .where(WalletORM.user_id == wallet.user_id)
